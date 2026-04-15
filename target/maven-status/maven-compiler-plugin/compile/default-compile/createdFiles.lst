@@ -1,0 +1,12 @@
+japan26\minigame\MinigameRegistry.class
+japan26\ui\GameView.class
+japan26\model\Character.class
+japan26\engine\SceneManager.class
+japan26\model\StoryScene.class
+japan26\Main.class
+japan26\story\StoryData.class
+japan26\ui\MainMenuView.class
+japan26\engine\StoryEngine.class
+japan26\ui\DialogueBox.class
+japan26\minigame\Minigame.class
+japan26\model\DialogueLine.class
