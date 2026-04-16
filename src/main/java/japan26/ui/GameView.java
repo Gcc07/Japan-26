@@ -2,7 +2,6 @@ package japan26.ui;
 
 import japan26.engine.SceneManager;
 import japan26.engine.StoryEngine;
-import japan26.story.StoryData;
 import japan26.model.DialogueLine;
 import japan26.model.StoryScene;
 import javafx.geometry.Insets;
@@ -21,13 +20,13 @@ import javafx.scene.layout.VBox;
  */
 public class GameView extends StackPane {
 
-    private static final String FALLBACK_BG = "/japan26/images/placeholder_bg.png";
+    private static final String FALLBACK_BG = "/japan26/images/Skyline.jpg";
 
     private final StoryEngine engine;
     private final ImageView   background;
     private final DialogueBox dialogueBox;
 
-    public GameView(StoryEngine engine) {
+    public GameView(StoryEngine engine, java.util.List<StoryScene> story) {
         this.engine = engine;
 
         // ── Background image layer ─────────────────────────────────────────
@@ -67,7 +66,7 @@ public class GameView extends StackPane {
         if (css != null) getStylesheets().add(css.toExternalForm());
 
         // ── Load and start the story ───────────────────────────────────────
-        engine.loadStory(StoryData.buildStory());
+        engine.loadStory(story);
         requestFocus();
     }
 

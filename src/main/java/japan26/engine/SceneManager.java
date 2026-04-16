@@ -2,10 +2,15 @@ package japan26.engine;
 
 import japan26.minigame.Minigame;
 import japan26.minigame.MinigameRegistry;
+import japan26.model.StoryScene;
+import japan26.story.StoryData;
+import japan26.story.TestStory;
 import japan26.ui.GameView;
 import japan26.ui.MainMenuView;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+
+import java.util.List;
 
 /**
  * Central hub for switching between the main JavaFX Scenes (screens):
@@ -39,7 +44,15 @@ public class SceneManager {
     }
 
     public static void startGame() {
-        GameView gameView = new GameView(storyEngine);
+        startGame(StoryData.buildStory());
+    }
+
+    public static void startTestStory() {
+        startGame(TestStory.buildStory());
+    }
+
+    public static void startGame(List<StoryScene> story) {
+        GameView gameView = new GameView(storyEngine, story);
         primaryStage.setScene(new Scene(gameView, 1280, 720));
     }
 
