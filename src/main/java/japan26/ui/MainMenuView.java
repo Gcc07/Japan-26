@@ -1,107 +1,109 @@
 package japan26.ui;
 
 import japan26.engine.SceneManager;
-import javafx.animation.FadeTransition;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.effect.DropShadow;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextFlow;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.CycleMethod;
-import javafx.scene.paint.LinearGradient;
-import javafx.scene.paint.Stop;
-import javafx.scene.shape.Rectangle;
-import javafx.util.Duration;
+
+import javax.imageio.ImageIO;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.RenderingHints;
+import java.io.IOException;
 
 /**
  * Title / main menu screen.
  */
-public class MainMenuView extends StackPane {
+public class MainMenuView extends JPanel {
+
+    private Image background;
 
     public MainMenuView() {
-        // ── Layer 1: Background photo ──────────────────────────────────────
-        ImageView bg = new ImageView();
-        bg.setFitWidth(1280);
-        bg.setFitHeight(720);
-        bg.setPreserveRatio(false);
-        var bgUrl = getClass().getResource("/japan26/images/OutsideCherry.jpg");
-        if (bgUrl != null) bg.setImage(new Image(bgUrl.toExternalForm()));
+        setLayout(null);
 
-        // ── Layer 2: Dark gradient overlay so text is readable ─────────────
-        Rectangle overlay = new Rectangle(1280, 720,
-            new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                new Stop(0.0,  Color.color(0, 0, 0, 0.62)),
-                new Stop(0.45, Color.color(0, 0, 0, 0.42)),
-                new Stop(1.0,  Color.color(0, 0, 0, 0.68))
-            )
-        );
-
-        // ── Layer 3: Cherry blossom animation ──────────────────────────────
         CherryBlossomAnimation blossoms = new CherryBlossomAnimation();
+        blossoms.setBounds(0, 0, 1280, 720);
+        blossoms.setEnabled(false);
+        add(blossoms);
 
-        // ── Layer 4: Content ───────────────────────────────────────────────
-        Text titleMain = new Text("JAPAN ");
-        titleMain.setFont(Font.font("Segoe UI", FontWeight.BOLD, 72));
-        titleMain.setFill(Color.web("#f0cd70"));
-        titleMain.setEffect(new DropShadow(28, Color.web("#f0cd70")));
+        JPanel content = buildContentPanel();
+        content.setBounds(390, 120, 500, 480);
+        add(content);
 
-        Text title26 = new Text("26");
-        title26.setFont(Font.font("Segoe UI", FontWeight.BOLD, 72));
-        title26.setFill(Color.web("#ffb7c5"));
-        title26.setEffect(new DropShadow(28, Color.web("#ffb7c5")));
+        try {
+            var bgUrl = getClass().getResource("/japan26/images/OutsideCherry.jpg");
+            if (bgUrl != null) background = ImageIO.read(bgUrl);
+        } catch (IOException ignored) {
+            // Keep null background if image cannot be read
+        }
+    }
 
-        TextFlow title = new TextFlow(titleMain, title26);
-        title.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+    private JPanel buildContentPanel() {
+        JPanel content = new JPanel();
+        content.setOpaque(false);
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
 
-        Label subtitle = new Label("A Story-Driven Journey  ·  Summer 2026");
-        subtitle.getStyleClass().add("subtitle-label");
+        JLabel title = new JLabel("JAPAN 26");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 72));
+        title.setForeground(new Color(240, 205, 112));
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Thin decorative divider
-        Rectangle divider = new Rectangle(200, 1);
-        divider.setFill(Color.color(0.88, 0.72, 0.38, 0.65));
+        JLabel subtitle = new JLabel("A Story-Driven Journey  -  Summer 2026");
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 22));
+        subtitle.setForeground(new Color(230, 230, 230));
+        subtitle.setHorizontalAlignment(SwingConstants.CENTER);
+        subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        Region spacer = new Region();
-        spacer.setMinHeight(8);
+        JButton startBtn = menuButton("Begin Journey");
+        startBtn.addActionListener(e -> SceneManager.startGame());
+        JButton testBtn = menuButton("Test Story");
+        testBtn.addActionListener(e -> SceneManager.startTestStory());
+        JButton quitBtn = menuButton("Quit");
+        quitBtn.addActionListener(e -> System.exit(0));
 
-        Button startBtn = new Button("Begin Journey");
-        startBtn.getStyleClass().add("menu-button");
-        startBtn.setOnAction(e -> SceneManager.startGame());
+        content.add(title);
+        content.add(Box.createRigidArea(new Dimension(0, 16)));
+        content.add(subtitle);
+        content.add(Box.createRigidArea(new Dimension(0, 40)));
+        content.add(startBtn);
+        content.add(Box.createRigidArea(new Dimension(0, 12)));
+        content.add(testBtn);
+        content.add(Box.createRigidArea(new Dimension(0, 12)));
+        content.add(quitBtn);
+        return content;
+    }
 
-        Button testBtn = new Button("Test Story");
-        testBtn.getStyleClass().add("menu-button-secondary");
-        testBtn.setOnAction(e -> SceneManager.startTestStory());
+    private JButton menuButton(String text) {
+        JButton button = new JButton(text);
+        button.setMaximumSize(new Dimension(300, 44));
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        return button;
+    }
 
-        Button quitBtn = new Button("Quit");
-        quitBtn.getStyleClass().add("menu-button");
-        quitBtn.setOnAction(e -> System.exit(0));
-
-        VBox content = new VBox(16, title, subtitle, divider, spacer, startBtn, testBtn, quitBtn);
-        content.setAlignment(Pos.CENTER);
-        content.setPadding(new Insets(40));
-
-        getChildren().addAll(bg, overlay, blossoms, content);
-        setAlignment(content, Pos.CENTER);
-
-        // ── Fade-in on load ────────────────────────────────────────────────
-        content.setOpacity(0);
-        FadeTransition fadeIn = new FadeTransition(Duration.millis(900), content);
-        fadeIn.setFromValue(0);
-        fadeIn.setToValue(1);
-        fadeIn.setDelay(Duration.millis(150));
-        fadeIn.play();
-
-        // ── Stylesheet ─────────────────────────────────────────────────────
-        var css = getClass().getResource("/japan26/css/style.css");
-        if (css != null) getStylesheets().add(css.toExternalForm());
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        if (background != null) {
+            g2.drawImage(background, 0, 0, getWidth(), getHeight(), this);
+        } else {
+            g2.setPaint(new GradientPaint(0, 0, new Color(35, 35, 45), 0, getHeight(), new Color(10, 10, 16)));
+            g2.fillRect(0, 0, getWidth(), getHeight());
+        }
+        g2.setColor(new Color(0, 0, 0, 140));
+        g2.fillRect(0, 0, getWidth(), getHeight());
     }
 }
