@@ -5,12 +5,13 @@ import japan26.model.DialogueLine;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import java.awt.Color;
-import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 
 /**
  * The translucent text box shown at the bottom of the screen.
@@ -25,9 +26,9 @@ public class DialogueBox extends JPanel {
 
     private static final double CHAR_DELAY_MS = 25; // ms per character
 
-    private final JLabel nameLabel;
-    private final JLabel textLabel;
-    private final JLabel continueHint;
+    private final PixelLabel nameLabel;
+    private final PixelLabel textLabel;
+    private final PixelLabel continueHint;
 
     private Timer    typewriterTimer;
     private String   fullText  = "";
@@ -35,18 +36,18 @@ public class DialogueBox extends JPanel {
 
     public DialogueBox() {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        setOpaque(true);
-        setBackground(new Color(24, 20, 28, 200));
+        setOpaque(false);
         setBorder(BorderFactory.createEmptyBorder(20, 30, 16, 30));
 
-        nameLabel = new JLabel("");
-        nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        nameLabel = new PixelLabel("");
+        nameLabel.setFont(PixelFont.bold(20f));
 
-        textLabel = new JLabel("");
-        textLabel.setFont(new Font("Segoe UI", Font.PLAIN, 22));
+        textLabel = new PixelLabel("");
+        textLabel.setFont(PixelFont.regular(22f));
         textLabel.setForeground(Color.WHITE);
 
-        continueHint = new JLabel("\u25BE");
+        continueHint = new PixelLabel("\u25BE");
+        continueHint.setFont(PixelFont.bold(20f));
         continueHint.setHorizontalAlignment(SwingConstants.RIGHT);
         continueHint.setVisible(false);
 
@@ -106,5 +107,15 @@ public class DialogueBox extends JPanel {
 
     private String toHtml(String text) {
         return "<html><body style='width:1120px'>" + text + "</body></html>";
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setColor(new Color(24, 20, 28, 200));
+        g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
+        g2.dispose();
+        super.paintComponent(g);
     }
 }

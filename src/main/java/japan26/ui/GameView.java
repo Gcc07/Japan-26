@@ -10,9 +10,11 @@ import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import java.awt.BorderLayout;
 import java.awt.Graphics;
-import java.awt.Image;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 
 /**
@@ -24,9 +26,11 @@ import java.io.IOException;
 public class GameView extends JPanel {
 
     private static final String FALLBACK_BG = "/japan26/images/Skyline.jpg";
+    private static final int PIXEL_SCALE = 4;
 
     private final StoryEngine engine;
-    private Image             background;
+    private BufferedImage     background;
+    private BufferedImage     pixelBuffer;
     private final DialogueBox dialogueBox;
 
     public GameView(StoryEngine engine, java.util.List<StoryScene> story) {
@@ -100,6 +104,7 @@ public class GameView extends JPanel {
         } catch (IOException ignored) {
             // Background stays as-is if the image is missing
         }
+        pixelBuffer = null;
         repaint();
     }
 
@@ -111,7 +116,21 @@ public class GameView extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         if (background != null) {
-            g.drawImage(background, 0, 0, getWidth(), getHeight(), this);
+            Graphics2D g2 = (Graphics2D) g;
+            int scaledW = Math.max(1, getWidth() / PIXEL_SCALE);
+            int scaledH = Math.max(1, getHeight() / PIXEL_SCALE);
+
+            if (pixelBuffer == null || pixelBuffer.getWidth() != scaledW || pixelBuffer.getHeight() != scaledH) {
+                pixelBuffer = new BufferedImage(scaledW, scaledH, BufferedImage.TYPE_INT_RGB);
+            }
+
+            Graphics2D pg = pixelBuffer.createGraphics();
+            pg.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            pg.drawImage(background, 0, 0, scaledW, scaledH, null);
+            pg.dispose();
+
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            g2.drawImage(pixelBuffer, 0, 0, getWidth(), getHeight(), null);
         }
     }
 }

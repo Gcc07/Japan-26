@@ -7,18 +7,16 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Image;
 import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 
 /**
@@ -26,7 +24,10 @@ import java.io.IOException;
  */
 public class MainMenuView extends JPanel {
 
-    private Image background;
+    private static final int PIXEL_SCALE = 4;
+
+    private BufferedImage background;
+    private BufferedImage pixelBuffer;
 
     public MainMenuView() {
         setLayout(null);
@@ -54,13 +55,13 @@ public class MainMenuView extends JPanel {
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
 
-        JLabel title = new JLabel("JAPAN 26");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 72));
+        PixelLabel title = new PixelLabel("JAPAN 26");
+        title.setFont(PixelFont.bold(66f));
         title.setForeground(new Color(240, 205, 112));
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel subtitle = new JLabel("A Story-Driven Journey  -  Summer 2026");
-        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 22));
+        PixelLabel subtitle = new PixelLabel("A Story-Driven Journey  -  Summer 2026");
+        subtitle.setFont(PixelFont.regular(20f));
         subtitle.setForeground(new Color(230, 230, 230));
         subtitle.setHorizontalAlignment(SwingConstants.CENTER);
         subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -88,7 +89,7 @@ public class MainMenuView extends JPanel {
         JButton button = new JButton(text);
         button.setMaximumSize(new Dimension(300, 44));
         button.setAlignmentX(Component.CENTER_ALIGNMENT);
-        button.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        button.setFont(PixelFont.bold(18f));
         return button;
     }
 
@@ -96,9 +97,19 @@ public class MainMenuView extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
-        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         if (background != null) {
-            g2.drawImage(background, 0, 0, getWidth(), getHeight(), this);
+            int scaledW = Math.max(1, getWidth() / PIXEL_SCALE);
+            int scaledH = Math.max(1, getHeight() / PIXEL_SCALE);
+            if (pixelBuffer == null || pixelBuffer.getWidth() != scaledW || pixelBuffer.getHeight() != scaledH) {
+                pixelBuffer = new BufferedImage(scaledW, scaledH, BufferedImage.TYPE_INT_RGB);
+            }
+            Graphics2D pg = pixelBuffer.createGraphics();
+            pg.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            pg.drawImage(background, 0, 0, scaledW, scaledH, null);
+            pg.dispose();
+
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            g2.drawImage(pixelBuffer, 0, 0, getWidth(), getHeight(), null);
         } else {
             g2.setPaint(new GradientPaint(0, 0, new Color(35, 35, 45), 0, getHeight(), new Color(10, 10, 16)));
             g2.fillRect(0, 0, getWidth(), getHeight());
