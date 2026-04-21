@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Run Japan 26",
+      "request": "launch",
+      "mainClass": "japan26.Main",
+      "projectName": "japan-26",
+      "vmArgs": "--enable-native-access=javafx.graphics"
+    }
+  ]
+}
