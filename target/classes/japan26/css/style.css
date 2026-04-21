@@ -10,15 +10,14 @@
 }
 
 .title-label {
-    -fx-font-size: 56px;
+    -fx-font-size: 72px;
     -fx-font-weight: bold;
-    -fx-text-fill: #e8c060;
-    -fx-effect: dropshadow(gaussian, rgba(232,192,96,0.4), 20, 0, 0, 0);
+    -fx-text-fill: #f0cd70;
 }
 
 .subtitle-label {
-    -fx-font-size: 18px;
-    -fx-text-fill: #888888;
+    -fx-font-size: 15px;
+    -fx-text-fill: rgba(220, 200, 180, 0.75);
     -fx-font-style: italic;
 }
 
@@ -42,6 +41,25 @@
 
 .menu-button:pressed {
     -fx-background-color: rgba(180, 140, 60, 0.55);
+}
+
+.menu-button-secondary {
+    -fx-background-color: rgba(80, 80, 80, 0.15);
+    -fx-border-color: rgba(120, 120, 120, 0.45);
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-text-fill: #888888;
+    -fx-font-size: 13px;
+    -fx-padding: 7 50;
+    -fx-cursor: hand;
+    -fx-min-width: 220;
+}
+
+.menu-button-secondary:hover {
+    -fx-background-color: rgba(80, 80, 80, 0.3);
+    -fx-border-color: rgba(150, 150, 150, 0.7);
+    -fx-text-fill: #aaaaaa;
 }
 
 /* ── Dialogue Box ──────────────────────────────────────────────────────── */

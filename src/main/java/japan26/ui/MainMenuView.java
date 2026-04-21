@@ -53,14 +53,15 @@ public class MainMenuView extends StackPane {
         Text titleMain = new Text("JAPAN ");
         titleMain.setFont(Font.font("Segoe UI", FontWeight.BOLD, 72));
         titleMain.setFill(Color.web("#f0cd70"));
+        titleMain.setEffect(new DropShadow(28, Color.web("#f0cd70")));
 
         Text title26 = new Text("26");
         title26.setFont(Font.font("Segoe UI", FontWeight.BOLD, 72));
         title26.setFill(Color.web("#ffb7c5"));
+        title26.setEffect(new DropShadow(28, Color.web("#ffb7c5")));
 
         TextFlow title = new TextFlow(titleMain, title26);
         title.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
-        title.setEffect(new DropShadow(28, Color.color(0.9, 0.65, 0.2, 0.55)));
 
         Label subtitle = new Label("A Story-Driven Journey  ·  Summer 2026");
         subtitle.getStyleClass().add("subtitle-label");
