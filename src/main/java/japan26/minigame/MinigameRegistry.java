@@ -18,6 +18,19 @@ public class MinigameRegistry {
         registry.put(key, game);
     }
 
+    /** Registers default placeholder minigames for integration testing. */
+    public static void ensureDefaultTestMinigames() {
+        registry.putIfAbsent("photo_focus", new RhythmDrumMinigame());
+        registry.putIfAbsent("street_quicktime", new PlaceholderMinigame(
+                "Street Quicktime",
+                "Placeholder for a timing/reaction minigame during story transitions."
+        ));
+        registry.putIfAbsent("memory_snap", new PlaceholderMinigame(
+                "Memory Snap",
+                "Placeholder for your memory or pattern minigame."
+        ));
+    }
+
     /** Returns the minigame for the given key, or null if not yet registered. */
     public static Minigame get(String key) {
         return registry.get(key);

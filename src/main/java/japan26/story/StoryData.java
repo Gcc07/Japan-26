@@ -1,6 +1,5 @@
 package japan26.story;
 
-import japan26.model.Character;
 import japan26.model.StoryScene;
 
 import java.util.List;

@@ -30,9 +30,19 @@ public class MainMenuView extends JPanel {
     private static final int    PIXEL_SCALE  = 4;
     private static final float  FLOAT_AMP    = 6f;   // px up/down
     private static final float  FLOAT_PERIOD = 3800f; // ms per full cycle
+    private static final int    BG_SWAP_MS   = 8000;
+
+    private static final String[] MENU_BACKGROUNDS = new String[] {
+            "/japan26/images/Skyline.jpg",
+            "/japan26/images/OutsideCherry.jpg",
+            "/japan26/images/Crossing 2.jpg",
+            "/japan26/images/RainyDay.jpg",
+            "/japan26/images/Skytree.jpg"
+    };
 
     private BufferedImage background;
     private BufferedImage pixelBuffer;
+    private int           backgroundIndex = 0;
 
     private final CherryBlossomAnimation blossoms;
     private final JPanel                 content;
@@ -48,12 +58,7 @@ public class MainMenuView extends JPanel {
         content = buildContentPanel();
         add(content);
 
-        try {
-            var bgUrl = getClass().getResource("/japan26/images/Skyline.jpg");
-            if (bgUrl != null) background = ImageIO.read(bgUrl);
-        } catch (IOException ignored) {
-            // Keep null background if image cannot be read
-        }
+        loadBackground(MENU_BACKGROUNDS[backgroundIndex]);
 
         Timer floatTimer = new Timer(16, e -> {
             float t = (System.currentTimeMillis() % (long) FLOAT_PERIOD) / FLOAT_PERIOD;
@@ -61,6 +66,9 @@ public class MainMenuView extends JPanel {
             revalidate();
         });
         floatTimer.start();
+
+        Timer bgTimer = new Timer(BG_SWAP_MS, e -> cycleBackground());
+        bgTimer.start();
     }
 
     @Override
@@ -90,12 +98,13 @@ public class MainMenuView extends JPanel {
 
         PixelButton startBtn = menuButton("Begin Journey");
         startBtn.setPlaySelectSound(false);
-        startBtn.addActionListener(e -> {
-            UISound.playStart();
-            SceneManager.startGame();
-        });
+        startBtn.addActionListener(e -> startGameWithStartSound());
         PixelButton testBtn = menuButton("Test Story");
-        testBtn.addActionListener(e -> SceneManager.startTestStory());
+        testBtn.setPlaySelectSound(false);
+        testBtn.addActionListener(e -> startTestStoryWithStartSound());
+        PixelButton minigameTestBtn = menuButton("Minigames Test");
+        minigameTestBtn.setPlaySelectSound(false);
+        minigameTestBtn.addActionListener(e -> startMinigameTestWithStartSound());
         PixelButton quitBtn = menuButton("Quit");
         quitBtn.addActionListener(e -> System.exit(0));
         PixelButton settingsBtn = menuButton("Settings");
@@ -106,16 +115,18 @@ public class MainMenuView extends JPanel {
         panel.add(title);
         panel.add(Box.createRigidArea(new Dimension(0, 16)));
         panel.add(subtitle);
-        panel.add(Box.createRigidArea(new Dimension(0, 40)));
+        panel.add(Box.createRigidArea(new Dimension(0, 20)));
         panel.add(startBtn);
         panel.add(Box.createRigidArea(new Dimension(0, 12)));
         panel.add(testBtn);
         panel.add(Box.createRigidArea(new Dimension(0, 12)));
-        panel.add(quitBtn);
+        panel.add(minigameTestBtn);
         panel.add(Box.createRigidArea(new Dimension(0, 12)));
         panel.add(settingsBtn);
         panel.add(Box.createRigidArea(new Dimension(0, 12)));
         panel.add(creditsBtn);
+        panel.add(Box.createRigidArea(new Dimension(0, 12)));
+        panel.add(quitBtn);
 
         SwingUtilities.invokeLater(startBtn::requestFocusInWindow);
         return panel;
@@ -142,6 +153,39 @@ public class MainMenuView extends JPanel {
         button.setAlignmentX(Component.CENTER_ALIGNMENT);
         button.setFont(PixelFont.bold(18f));
         return button;
+    }
+
+    private void startGameWithStartSound() {
+        UISound.playStart();
+        SceneManager.startGameWithNamePrompt();
+    }
+
+    private void startTestStoryWithStartSound() {
+        UISound.playStart();
+        SceneManager.startTestStory();
+    }
+
+    private void startMinigameTestWithStartSound() {
+        UISound.playStart();
+        SceneManager.startMinigameTestStory();
+    }
+
+    private void cycleBackground() {
+        backgroundIndex = (backgroundIndex + 1) % MENU_BACKGROUNDS.length;
+        loadBackground(MENU_BACKGROUNDS[backgroundIndex]);
+    }
+
+    private void loadBackground(String resourcePath) {
+        try {
+            var bgUrl = getClass().getResource(resourcePath);
+            if (bgUrl != null) {
+                background = ImageIO.read(bgUrl);
+                pixelBuffer = null;
+                repaint();
+            }
+        } catch (IOException ignored) {
+            // Keep previous background if this image fails to load
+        }
     }
 
     @Override

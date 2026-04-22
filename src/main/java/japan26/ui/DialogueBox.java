@@ -70,7 +70,8 @@ public class DialogueBox extends JPanel {
         Character ch = line.getCharacter();
 
         boolean isNarrator = ch.getName().isEmpty();
-        nameLabel.setText(isNarrator ? "" : ch.getName());
+        String speakerName = (ch == Character.PLAYER) ? SettingsState.getPlayerName() : ch.getName();
+        nameLabel.setText(isNarrator ? "" : speakerName);
         nameLabel.setForeground(Color.decode(ch.getColor()));
         nameLabel.setVisible(!isNarrator);
         textLabel.setForeground(isNarrator ? new Color(235, 235, 235) : Color.WHITE);

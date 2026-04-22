@@ -51,6 +51,10 @@ public class StoryEngine {
         DialogueLine current = getCurrentLine();
         if (current != null && current.hasChoices()) return;
 
+        stepToNextLine();
+    }
+
+    private void stepToNextLine() {
         lineIndex++;
         if (lineIndex >= currentScene.getLines().size()) {
             // Scene is done – check for minigame hook or move on
@@ -99,7 +103,7 @@ public class StoryEngine {
         DialogueLine line = getCurrentLine();
         if (line == null || !line.hasChoices()) return;
         selectedChoices.put(line.getChoiceId(), option);
-        advance();
+        stepToNextLine();
     }
 
     public StoryScene getCurrentScene() { return currentScene; }
