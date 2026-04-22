@@ -3,12 +3,15 @@ package japan26.ui;
 import japan26.engine.SceneManager;
 
 import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingConstants;
+import javax.swing.Timer;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -24,13 +27,16 @@ import java.io.IOException;
  */
 public class MainMenuView extends JPanel {
 
-    private static final int PIXEL_SCALE = 4;
+    private static final int    PIXEL_SCALE  = 4;
+    private static final float  FLOAT_AMP    = 6f;   // px up/down
+    private static final float  FLOAT_PERIOD = 3800f; // ms per full cycle
 
     private BufferedImage background;
     private BufferedImage pixelBuffer;
 
     private final CherryBlossomAnimation blossoms;
-    private final JPanel content;
+    private final JPanel                 content;
+    private float                        floatOffset = 0f;
 
     public MainMenuView() {
         setLayout(null);
@@ -43,11 +49,18 @@ public class MainMenuView extends JPanel {
         add(content);
 
         try {
-            var bgUrl = getClass().getResource("/japan26/images/OutsideCherry.jpg");
+            var bgUrl = getClass().getResource("/japan26/images/Skyline.jpg");
             if (bgUrl != null) background = ImageIO.read(bgUrl);
         } catch (IOException ignored) {
             // Keep null background if image cannot be read
         }
+
+        Timer floatTimer = new Timer(16, e -> {
+            float t = (System.currentTimeMillis() % (long) FLOAT_PERIOD) / FLOAT_PERIOD;
+            floatOffset = (float) (FLOAT_AMP * Math.sin(2 * Math.PI * t));
+            revalidate();
+        });
+        floatTimer.start();
     }
 
     @Override
@@ -57,7 +70,7 @@ public class MainMenuView extends JPanel {
         blossoms.setBounds(0, 0, w, h);
         Dimension pref = content.getPreferredSize();
         int cx = (w - pref.width) / 2;
-        int cy = (h - pref.height) / 2;
+        int cy = (h - pref.height) / 2 + (int) floatOffset;
         content.setBounds(cx, cy, pref.width, pref.height);
     }
 
@@ -67,19 +80,20 @@ public class MainMenuView extends JPanel {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
 
-        PixelLabel title = new PixelLabel("JAPAN 26");
-        title.setFont(PixelFont.bold(66f));
-        title.setForeground(new Color(240, 205, 112));
-        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JLabel title = createTitleGraphic();
 
-        PixelLabel subtitle = new PixelLabel("A Story-Driven Journey  -  Summer 2026");
+        PixelLabel subtitle = new PixelLabel("A totally normal trip to remember.");
         subtitle.setFont(PixelFont.regular(20f));
         subtitle.setForeground(new Color(230, 230, 230));
         subtitle.setHorizontalAlignment(SwingConstants.CENTER);
         subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         PixelButton startBtn = menuButton("Begin Journey");
-        startBtn.addActionListener(e -> SceneManager.startGame());
+        startBtn.setPlaySelectSound(false);
+        startBtn.addActionListener(e -> {
+            UISound.playStart();
+            SceneManager.startGame();
+        });
         PixelButton testBtn = menuButton("Test Story");
         testBtn.addActionListener(e -> SceneManager.startTestStory());
         PixelButton quitBtn = menuButton("Quit");
@@ -105,6 +119,20 @@ public class MainMenuView extends JPanel {
 
         SwingUtilities.invokeLater(startBtn::requestFocusInWindow);
         return panel;
+    }
+
+    private JLabel createTitleGraphic() {
+        var titleUrl = getClass().getResource("/japan26/UI/Japan26.png");
+        if (titleUrl != null) {
+            JLabel label = new JLabel(new ImageIcon(titleUrl));
+            label.setAlignmentX(Component.CENTER_ALIGNMENT);
+            return label;
+        }
+        PixelLabel fallback = new PixelLabel("JAPAN 26");
+        fallback.setFont(PixelFont.bold(66f));
+        fallback.setForeground(new Color(240, 205, 112));
+        fallback.setAlignmentX(Component.CENTER_ALIGNMENT);
+        return fallback;
     }
 
     private PixelButton menuButton(String text) {

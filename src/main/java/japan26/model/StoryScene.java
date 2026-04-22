@@ -1,7 +1,9 @@
 package japan26.model;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A named story scene composed of an ordered list of DialogueLines.
@@ -36,6 +38,31 @@ public class StoryScene {
     /** Add a line AND swap the background at that moment. */
     public StoryScene sayWith(Character character, String text, String backgroundPath) {
         lines.add(new DialogueLine(character, text, backgroundPath));
+        return this;
+    }
+
+    /** Present a player choice prompt (story path remains unchanged). */
+    public StoryScene choose(String choiceId, String prompt, String... options) {
+        lines.add(DialogueLine.choicePrompt(choiceId, prompt, options));
+        return this;
+    }
+
+    /**
+     * Add a spoken line whose text changes based on a prior choice.
+     * responsePairs should be option/text pairs:
+     *   "Confident", "Let's do this.", "Nervous", "Uh...okay."
+     */
+    public StoryScene sayByChoice(
+            Character character,
+            String choiceId,
+            String defaultText,
+            String... responsePairs
+    ) {
+        Map<String, String> responses = new HashMap<>();
+        for (int i = 0; i + 1 < responsePairs.length; i += 2) {
+            responses.put(responsePairs[i], responsePairs[i + 1]);
+        }
+        lines.add(DialogueLine.choiceResponse(character, choiceId, defaultText, responses));
         return this;
     }
 

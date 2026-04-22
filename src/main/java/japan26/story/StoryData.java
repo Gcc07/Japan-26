@@ -28,6 +28,12 @@ import static japan26.model.Character.PLAYER;
  *  Add a character:
  *      private static final Character MY_CHAR = Character.named("Name", "#hexcolor");
  *
+ *  Add dialogue choices (path stays linear, responses vary):
+ *      .choose("mood", "How do you respond?", "Confident", "Nervous")
+ *      .sayByChoice(PLAYER, "mood", "Let's go.",
+ *          "Confident", "I've got this.",
+ *          "Nervous",   "I hope this goes well...")
+ *
  *  Attach a minigame after a scene ends:
  *      .thenMinigame("my_minigame_key")
  *
@@ -46,7 +52,10 @@ public class StoryData {
 
             new StoryScene("scene_1", "/japan26/images/Skyline.jpg")
                 .say(NARRATOR, "Your story starts here.")
-                .say(PLAYER,   "Replace this with your own dialogue.")
+                .choose("first_reply", "How do you answer?", "Confident", "Cautious")
+                .sayByChoice(PLAYER, "first_reply", "Replace this with your own dialogue.",
+                    "Confident", "I was born ready. Let's go.",
+                    "Cautious",  "I can do this... one step at a time.")
 
         );
     }

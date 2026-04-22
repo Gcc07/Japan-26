@@ -89,6 +89,8 @@ public class GameView extends JPanel {
     // ── Advance logic ─────────────────────────────────────────────────────────
 
     private void handleAdvance() {
+        DialogueLine line = engine.getCurrentLine();
+        if (line != null && line.hasChoices()) return;
         if (dialogueBox.isTyping()) {
             dialogueBox.skipTyping();
         } else {
@@ -108,7 +110,7 @@ public class GameView extends JPanel {
         DialogueLine line = engine.getCurrentLine();
         if (line == null) return;
         if (line.changesBackground()) setBackground(line.getBackgroundPath());
-        dialogueBox.show(line);
+        dialogueBox.show(line, engine.getCurrentLineText(), engine::choose);
     }
 
     private void setBackground(String resourcePath) {
