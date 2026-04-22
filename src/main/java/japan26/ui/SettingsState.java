@@ -5,6 +5,7 @@ package japan26.ui;
  */
 public final class SettingsState {
     private static int volumePercent = 70;
+    private static String playerName = "Traveler";
 
     private SettingsState() {
     }
@@ -19,5 +20,14 @@ public final class SettingsState {
 
     public static boolean isMuted() {
         return volumePercent == 0;
+    }
+
+    public static String getPlayerName() {
+        return playerName;
+    }
+
+    public static void setPlayerName(String name) {
+        String trimmed = name == null ? "" : name.trim();
+        playerName = trimmed.isEmpty() ? "Traveler" : trimmed;
     }
 }

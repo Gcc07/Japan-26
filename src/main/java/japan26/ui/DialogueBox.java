@@ -12,6 +12,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.util.function.Consumer;
 
 /**
  * The translucent text box shown at the bottom of the screen.
@@ -29,6 +30,7 @@ public class DialogueBox extends JPanel {
     private final PixelLabel nameLabel;
     private final PixelLabel textLabel;
     private final PixelLabel continueHint;
+    private final JPanel     choicePanel;
 
     private Timer    typewriterTimer;
     private String   fullText  = "";
@@ -51,23 +53,40 @@ public class DialogueBox extends JPanel {
         continueHint.setHorizontalAlignment(SwingConstants.RIGHT);
         continueHint.setVisible(false);
 
+        choicePanel = new JPanel();
+        choicePanel.setOpaque(false);
+        choicePanel.setLayout(new BoxLayout(choicePanel, BoxLayout.Y_AXIS));
+        choicePanel.setVisible(false);
+
         add(nameLabel);
         add(textLabel);
+        add(choicePanel);
         add(continueHint);
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
 
-    public void show(DialogueLine line) {
+    public void show(DialogueLine line, String displayText, Consumer<String> onChoiceSelected) {
         Character ch = line.getCharacter();
 
         boolean isNarrator = ch.getName().isEmpty();
-        nameLabel.setText(isNarrator ? "" : ch.getName());
+        String speakerName = (ch == Character.PLAYER) ? SettingsState.getPlayerName() : ch.getName();
+        nameLabel.setText(isNarrator ? "" : speakerName);
         nameLabel.setForeground(Color.decode(ch.getColor()));
         nameLabel.setVisible(!isNarrator);
         textLabel.setForeground(isNarrator ? new Color(235, 235, 235) : Color.WHITE);
 
-        startTypewriter(line.getText());
+        if (line.hasChoices()) {
+            if (typewriterTimer != null) typewriterTimer.stop();
+            typing = false;
+            continueHint.setVisible(false);
+            textLabel.setText(toHtml(displayText));
+            renderChoices(line, onChoiceSelected);
+            return;
+        }
+
+        choicePanel.setVisible(false);
+        startTypewriter(displayText);
     }
 
     public boolean isTyping() { return typing; }
@@ -103,6 +122,27 @@ public class DialogueBox extends JPanel {
             textLabel.setText(toHtml(fullText.substring(0, idx[0])));
         });
         typewriterTimer.start();
+    }
+
+    private void renderChoices(DialogueLine line, Consumer<String> onChoiceSelected) {
+        choicePanel.removeAll();
+        for (String option : line.getChoiceOptions()) {
+            PixelButton button = new PixelButton(option);
+            button.setFont(PixelFont.bold(15f));
+            button.setPlaySelectSound(false);
+            button.setPreferredSize(new java.awt.Dimension(520, 36));
+            button.setMaximumSize(new java.awt.Dimension(520, 36));
+            button.setAlignmentX(LEFT_ALIGNMENT);
+            button.addActionListener(e -> {
+                UISound.playSelect();
+                onChoiceSelected.accept(option);
+            });
+            choicePanel.add(button);
+            choicePanel.add(javax.swing.Box.createRigidArea(new java.awt.Dimension(0, 8)));
+        }
+        choicePanel.setVisible(true);
+        revalidate();
+        repaint();
     }
 
     private String toHtml(String text) {

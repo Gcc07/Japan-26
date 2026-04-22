@@ -4,8 +4,10 @@ import japan26.model.DialogueLine;
 import japan26.model.StoryScene;
 
 import java.util.ArrayDeque;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Deque;
+import java.util.Map;
 
 /**
  * Drives story playback.  Holds the ordered queue of scenes and tracks which
@@ -20,6 +22,7 @@ public class StoryEngine {
     private StoryScene   currentScene;
     private int          lineIndex = 0;
     private boolean      finished  = false;
+    private final Map<String, String> selectedChoices = new HashMap<>();
 
     // Listeners so the UI can react without polling
     private Runnable onLineChanged;
@@ -33,6 +36,7 @@ public class StoryEngine {
         sceneQueue.addAll(scenes);
         lineIndex = 0;
         finished  = false;
+        selectedChoices.clear();
         advanceToNextScene();
     }
 
@@ -44,7 +48,13 @@ public class StoryEngine {
      */
     public void advance() {
         if (finished) return;
+        DialogueLine current = getCurrentLine();
+        if (current != null && current.hasChoices()) return;
 
+        stepToNextLine();
+    }
+
+    private void stepToNextLine() {
         lineIndex++;
         if (lineIndex >= currentScene.getLines().size()) {
             // Scene is done – check for minigame hook or move on
@@ -78,6 +88,22 @@ public class StoryEngine {
     public DialogueLine getCurrentLine() {
         if (currentScene == null || finished) return null;
         return currentScene.getLines().get(lineIndex);
+    }
+
+    public String getCurrentLineText() {
+        DialogueLine line = getCurrentLine();
+        if (line == null) return "";
+        if (line.hasChoiceResponses()) {
+            return line.getTextForChoice(selectedChoices.get(line.getChoiceId()));
+        }
+        return line.getText();
+    }
+
+    public void choose(String option) {
+        DialogueLine line = getCurrentLine();
+        if (line == null || !line.hasChoices()) return;
+        selectedChoices.put(line.getChoiceId(), option);
+        stepToNextLine();
     }
 
     public StoryScene getCurrentScene() { return currentScene; }

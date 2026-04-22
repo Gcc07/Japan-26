@@ -48,7 +48,13 @@
 
 ---
 
-### Run (Swing + javac, no Maven)
+### How To Run
+
+This project now runs as a Swing app (no JavaFX/Maven runtime needed).
+
+Requirements:
+- Java JDK installed (`javac` and `java` available in terminal PATH)
+- Windows PowerShell or Command Prompt
 
 From the project root:
 
@@ -56,6 +62,22 @@ From the project root:
 .\run.ps1
 ```
 
-Optional:
-- `.\run.bat`
-- `.\run.ps1 -NoClean` (skip deleting `out` first)
+Other options:
+- `.\run.bat` (cmd/batch wrapper)
+- `.\run.ps1 -NoClean` (faster reruns, skips deleting `out`)
+
+If PowerShell blocks script execution, run:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\run.ps1"
+```
+
+Manual fallback (without scripts):
+
+```powershell
+if (Test-Path out) { Remove-Item -Recurse -Force out }
+New-Item -ItemType Directory out | Out-Null
+$files = Get-ChildItem -Recurse -Filter *.java "src/main/java" | ForEach-Object { $_.FullName }
+javac -d out $files
+java -cp "out;src/main/resources" japan26.Main
+```

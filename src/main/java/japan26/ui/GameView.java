@@ -7,6 +7,9 @@ import japan26.model.StoryScene;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JTextField;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import java.awt.BorderLayout;
@@ -34,8 +37,9 @@ public class GameView extends JPanel {
     private BufferedImage     background;
     private BufferedImage     pixelBuffer;
     private final DialogueBox dialogueBox;
+    private final JPanel      namePromptPanel;
 
-    public GameView(StoryEngine engine, java.util.List<StoryScene> story) {
+    public GameView(StoryEngine engine, java.util.List<StoryScene> story, boolean askNameAfterFade) {
         this.engine = engine;
 
         setLayout(new BorderLayout());
@@ -61,6 +65,10 @@ public class GameView extends JPanel {
         topBar.add(settingsBtn);
         topBar.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
         add(topBar, BorderLayout.NORTH);
+
+        namePromptPanel = createNamePromptPanel();
+        add(namePromptPanel, BorderLayout.CENTER);
+        namePromptPanel.setVisible(askNameAfterFade);
 
         addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) { handleAdvance(); }
@@ -89,6 +97,9 @@ public class GameView extends JPanel {
     // ── Advance logic ─────────────────────────────────────────────────────────
 
     private void handleAdvance() {
+        if (namePromptPanel.isVisible()) return;
+        DialogueLine line = engine.getCurrentLine();
+        if (line != null && line.hasChoices()) return;
         if (dialogueBox.isTyping()) {
             dialogueBox.skipTyping();
         } else {
@@ -108,7 +119,7 @@ public class GameView extends JPanel {
         DialogueLine line = engine.getCurrentLine();
         if (line == null) return;
         if (line.changesBackground()) setBackground(line.getBackgroundPath());
-        dialogueBox.show(line);
+        dialogueBox.show(line, engine.getCurrentLineText(), engine::choose);
     }
 
     private void setBackground(String resourcePath) {
@@ -129,6 +140,54 @@ public class GameView extends JPanel {
 
     private void onStoryDone() {
         SceneManager.showMainMenu();
+    }
+
+    private JPanel createNamePromptPanel() {
+        JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 170));
+        wrapper.setOpaque(false);
+
+        JPanel card = new JPanel();
+        card.setOpaque(true);
+        card.setBackground(new java.awt.Color(20, 16, 28, 230));
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new java.awt.Color(168, 138, 196), 2),
+                BorderFactory.createEmptyBorder(18, 20, 16, 20)
+        ));
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+
+        PixelLabel label = new PixelLabel("Enter your name:");
+        label.setFont(PixelFont.bold(16f));
+        label.setForeground(new java.awt.Color(236, 226, 204));
+        label.setAlignmentX(LEFT_ALIGNMENT);
+
+        JTextField nameField = new JTextField(SettingsState.getPlayerName());
+        nameField.setMaximumSize(new java.awt.Dimension(280, 34));
+        nameField.setPreferredSize(new java.awt.Dimension(280, 34));
+        nameField.setFont(PixelFont.regular(14f));
+        nameField.setForeground(new java.awt.Color(245, 245, 245));
+        nameField.setBackground(new java.awt.Color(38, 30, 52));
+        nameField.setCaretColor(new java.awt.Color(245, 245, 245));
+        nameField.setBorder(BorderFactory.createLineBorder(new java.awt.Color(154, 126, 186), 2));
+        nameField.setAlignmentX(LEFT_ALIGNMENT);
+
+        PixelButton confirm = new PixelButton("Continue");
+        confirm.setFont(PixelFont.bold(15f));
+        confirm.setPreferredSize(new java.awt.Dimension(200, 38));
+        confirm.setMaximumSize(new java.awt.Dimension(200, 38));
+        confirm.setAlignmentX(LEFT_ALIGNMENT);
+        confirm.addActionListener(e -> {
+            SettingsState.setPlayerName(nameField.getText());
+            namePromptPanel.setVisible(false);
+            requestFocusInWindow();
+        });
+
+        card.add(label);
+        card.add(Box.createRigidArea(new java.awt.Dimension(0, 8)));
+        card.add(nameField);
+        card.add(Box.createRigidArea(new java.awt.Dimension(0, 12)));
+        card.add(confirm);
+        wrapper.add(card);
+        return wrapper;
     }
 
     @Override
