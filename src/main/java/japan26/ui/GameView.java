@@ -6,9 +6,11 @@ import japan26.model.DialogueLine;
 import japan26.model.StoryScene;
 
 import javax.imageio.ImageIO;
+import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -49,13 +51,30 @@ public class GameView extends JPanel {
 
         add(bottomBar, BorderLayout.SOUTH);
 
+        JPanel topBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 18, 14));
+        topBar.setOpaque(false);
+        PixelButton settingsBtn = new PixelButton("Settings");
+        settingsBtn.setFont(PixelFont.bold(14f));
+        settingsBtn.setPreferredSize(new java.awt.Dimension(170, 38));
+        settingsBtn.setMaximumSize(new java.awt.Dimension(170, 38));
+        settingsBtn.addActionListener(e -> SettingsDialog.show(SceneManager.getFrame(), false));
+        topBar.add(settingsBtn);
+        topBar.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
+        add(topBar, BorderLayout.NORTH);
+
         addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) { handleAdvance(); }
         });
         getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("SPACE"), "advance");
         getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ENTER"), "advance");
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ESCAPE"), "settings");
         getActionMap().put("advance", new javax.swing.AbstractAction() {
             @Override public void actionPerformed(java.awt.event.ActionEvent e) { handleAdvance(); }
+        });
+        getActionMap().put("settings", new javax.swing.AbstractAction() {
+            @Override public void actionPerformed(java.awt.event.ActionEvent e) {
+                SettingsDialog.show(SceneManager.getFrame(), false);
+            }
         });
 
         // ── Wire story engine callbacks ────────────────────────────────────

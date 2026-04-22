@@ -6,8 +6,8 @@ import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.JButton;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingConstants;
 import java.awt.Color;
 import java.awt.Component;
@@ -29,16 +29,17 @@ public class MainMenuView extends JPanel {
     private BufferedImage background;
     private BufferedImage pixelBuffer;
 
+    private final CherryBlossomAnimation blossoms;
+    private final JPanel content;
+
     public MainMenuView() {
         setLayout(null);
 
-        CherryBlossomAnimation blossoms = new CherryBlossomAnimation();
-        blossoms.setBounds(0, 0, 1280, 720);
+        blossoms = new CherryBlossomAnimation();
         blossoms.setEnabled(false);
         add(blossoms);
 
-        JPanel content = buildContentPanel();
-        content.setBounds(390, 120, 500, 480);
+        content = buildContentPanel();
         add(content);
 
         try {
@@ -49,11 +50,22 @@ public class MainMenuView extends JPanel {
         }
     }
 
+    @Override
+    public void doLayout() {
+        int w = getWidth();
+        int h = getHeight();
+        blossoms.setBounds(0, 0, w, h);
+        Dimension pref = content.getPreferredSize();
+        int cx = (w - pref.width) / 2;
+        int cy = (h - pref.height) / 2;
+        content.setBounds(cx, cy, pref.width, pref.height);
+    }
+
     private JPanel buildContentPanel() {
-        JPanel content = new JPanel();
-        content.setOpaque(false);
-        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-        content.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
+        JPanel panel = new JPanel();
+        panel.setOpaque(false);
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
 
         PixelLabel title = new PixelLabel("JAPAN 26");
         title.setFont(PixelFont.bold(66f));
@@ -66,27 +78,38 @@ public class MainMenuView extends JPanel {
         subtitle.setHorizontalAlignment(SwingConstants.CENTER);
         subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JButton startBtn = menuButton("Begin Journey");
+        PixelButton startBtn = menuButton("Begin Journey");
         startBtn.addActionListener(e -> SceneManager.startGame());
-        JButton testBtn = menuButton("Test Story");
+        PixelButton testBtn = menuButton("Test Story");
         testBtn.addActionListener(e -> SceneManager.startTestStory());
-        JButton quitBtn = menuButton("Quit");
+        PixelButton quitBtn = menuButton("Quit");
         quitBtn.addActionListener(e -> System.exit(0));
+        PixelButton settingsBtn = menuButton("Settings");
+        settingsBtn.addActionListener(e -> SettingsDialog.show(SceneManager.getFrame(), true));
+        PixelButton creditsBtn = menuButton("Credits");
+        creditsBtn.addActionListener(e -> CreditsDialog.show(SceneManager.getFrame()));
 
-        content.add(title);
-        content.add(Box.createRigidArea(new Dimension(0, 16)));
-        content.add(subtitle);
-        content.add(Box.createRigidArea(new Dimension(0, 40)));
-        content.add(startBtn);
-        content.add(Box.createRigidArea(new Dimension(0, 12)));
-        content.add(testBtn);
-        content.add(Box.createRigidArea(new Dimension(0, 12)));
-        content.add(quitBtn);
-        return content;
+        panel.add(title);
+        panel.add(Box.createRigidArea(new Dimension(0, 16)));
+        panel.add(subtitle);
+        panel.add(Box.createRigidArea(new Dimension(0, 40)));
+        panel.add(startBtn);
+        panel.add(Box.createRigidArea(new Dimension(0, 12)));
+        panel.add(testBtn);
+        panel.add(Box.createRigidArea(new Dimension(0, 12)));
+        panel.add(quitBtn);
+        panel.add(Box.createRigidArea(new Dimension(0, 12)));
+        panel.add(settingsBtn);
+        panel.add(Box.createRigidArea(new Dimension(0, 12)));
+        panel.add(creditsBtn);
+
+        SwingUtilities.invokeLater(startBtn::requestFocusInWindow);
+        return panel;
     }
 
-    private JButton menuButton(String text) {
-        JButton button = new JButton(text);
+    private PixelButton menuButton(String text) {
+        PixelButton button = new PixelButton(text);
+        button.setPreferredSize(new Dimension(300, 44));
         button.setMaximumSize(new Dimension(300, 44));
         button.setAlignmentX(Component.CENTER_ALIGNMENT);
         button.setFont(PixelFont.bold(18f));
