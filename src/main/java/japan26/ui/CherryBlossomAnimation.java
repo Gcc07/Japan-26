@@ -1,18 +1,18 @@
 package japan26.ui;
 
-import javafx.animation.AnimationTimer;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.paint.Color;
-
+import javax.swing.JPanel;
+import javax.swing.Timer;
+import java.awt.AlphaComposite;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.util.Random;
 
 /**
- * A Canvas that renders continuously falling cherry blossom petals.
- * Automatically starts/stops with the JavaFX scene lifecycle.
- * Mouse-transparent so clicks pass through to buttons underneath.
+ * A JPanel that renders continuously falling cherry blossom petals.
  */
-public class CherryBlossomAnimation extends Canvas {
+public class CherryBlossomAnimation extends JPanel {
 
     private static final int    COUNT = 60;
     private static final double W     = 1280;
@@ -22,13 +22,12 @@ public class CherryBlossomAnimation extends Canvas {
     private final double[] px, py, size, speed, angle, spin, swayAmp, swayPhase;
     private final Color[]  color;
 
-    private final AnimationTimer timer;
+    private final Timer          timer;
     private final Random         rng = new Random(42);
-    private long lastNano = 0;
+    private long                 lastNanos = System.nanoTime();
 
     public CherryBlossomAnimation() {
-        super(W, H);
-        setMouseTransparent(true);
+        setOpaque(false);
 
         px        = new double[COUNT];
         py        = new double[COUNT];
@@ -42,21 +41,14 @@ public class CherryBlossomAnimation extends Canvas {
 
         for (int i = 0; i < COUNT; i++) spawnPetal(i, true);
 
-        timer = new AnimationTimer() {
-            @Override public void handle(long now) {
-                double dt = lastNano == 0 ? 0.016 : (now - lastNano) / 1_000_000_000.0;
-                lastNano  = now;
-                dt = Math.min(dt, 0.05);
-                update(dt);
-                render();
-            }
-        };
-
-        // Tie the animation to the scene so it stops when the screen is swapped out
-        sceneProperty().addListener((obs, oldScene, newScene) -> {
-            if (newScene != null) { lastNano = 0; timer.start(); }
-            else                    timer.stop();
+        timer = new Timer(16, e -> {
+            long now = System.nanoTime();
+            double dt = Math.min((now - lastNanos) / 1_000_000_000.0, 0.05);
+            lastNanos = now;
+            update(dt);
+            repaint();
         });
+        timer.start();
     }
 
     // ── Petal initialisation ──────────────────────────────────────────────────
@@ -72,12 +64,7 @@ public class CherryBlossomAnimation extends Canvas {
         swayPhase[i]= rng.nextDouble() * Math.PI * 2;
 
         double alpha = 0.50 + rng.nextDouble() * 0.45;
-        color[i] = switch (rng.nextInt(4)) {
-            case 0  -> Color.color(1.00, 0.72, 0.77, alpha); // soft pink
-            case 1  -> Color.color(1.00, 0.82, 0.86, alpha); // light pink
-            case 2  -> Color.color(1.00, 0.91, 0.93, alpha); // pale pink
-            default -> Color.color(1.00, 0.97, 0.98, alpha); // near-white
-        };
+        color[i] = colorForPetal(alpha, rng.nextInt(4));
     }
 
     // ── Per-frame update ──────────────────────────────────────────────────────
@@ -92,26 +79,34 @@ public class CherryBlossomAnimation extends Canvas {
         }
     }
 
-    // ── Rendering ─────────────────────────────────────────────────────────────
-
-    private void render() {
-        GraphicsContext gc = getGraphicsContext2D();
-        gc.clearRect(0, 0, W, H);
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         for (int i = 0; i < COUNT; i++) {
-            gc.save();
-            gc.translate(px[i], py[i]);
-            gc.rotate(angle[i]);
-            gc.setFill(color[i]);
+            Graphics2D p = (Graphics2D) g2.create();
+            p.translate(px[i], py[i]);
+            p.rotate(Math.toRadians(angle[i]));
+            p.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, color[i].getAlpha() / 255f));
+            p.setColor(color[i]);
 
             double s = size[i];
-            // Primary petal lobe
-            gc.fillOval(-s * 0.5, -s * 0.26, s, s * 0.52);
-            // Small notch hint at the tip (second smaller oval, slightly offset)
-            gc.setFill(color[i].deriveColor(0, 1, 0.88, 0.5));
-            gc.fillOval(-s * 0.18, -s * 0.26, s * 0.36, s * 0.22);
-
-            gc.restore();
+            p.fillOval((int) (-s * 0.5), (int) (-s * 0.26), (int) s, (int) (s * 0.52));
+            p.setColor(new Color(255, 245, 250, 130));
+            p.fillOval((int) (-s * 0.18), (int) (-s * 0.26), (int) (s * 0.36), (int) (s * 0.22));
+            p.dispose();
         }
+    }
+
+    private Color colorForPetal(double alpha, int variant) {
+        int a = (int) (alpha * 255);
+        return switch (variant) {
+            case 0 -> new Color(255, 184, 196, a);
+            case 1 -> new Color(255, 209, 219, a);
+            case 2 -> new Color(255, 232, 237, a);
+            default -> new Color(255, 248, 250, a);
+        };
     }
 }

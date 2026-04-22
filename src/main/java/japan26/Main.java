@@ -1,21 +1,18 @@
 package japan26;
 
 import japan26.engine.SceneManager;
-import javafx.application.Application;
-import javafx.stage.Stage;
+import javax.swing.SwingUtilities;
 
 /**
- * Entry point.  JavaFX calls start() on the JavaFX Application Thread.
+ * Entry point for the Swing version of the app.
  */
-public class Main extends Application {
-
-    @Override
-    public void start(Stage stage) {
-        SceneManager.init(stage);
-        SceneManager.showMainMenu();
-    }
+public class Main {
 
     public static void main(String[] args) {
-        launch(args);
+        SwingUtilities.invokeLater(() -> {
+            SceneManager.init();
+            SceneManager.showMainMenu();
+        });
     }
 }
+

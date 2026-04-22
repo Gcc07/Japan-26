@@ -1,6 +1,6 @@
 package japan26.minigame;
 
-import javafx.stage.Stage;
+import javax.swing.JFrame;
 
 /**
  * Interface every minigame must implement.
@@ -13,9 +13,9 @@ public interface Minigame {
 
     /**
      * Called by SceneManager to launch the minigame.
-     * The implementation should set up its JavaFX scene and attach it to the stage.
+     * The implementation should set up its Swing UI and attach it to the frame.
      */
-    void start(Stage stage);
+    void start(JFrame frame);
 
     /**
      * Called by the minigame when the player has finished.

@@ -1,107 +1,143 @@
 package japan26.ui;
 
 import japan26.engine.SceneManager;
-import javafx.animation.FadeTransition;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.effect.DropShadow;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextFlow;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.CycleMethod;
-import javafx.scene.paint.LinearGradient;
-import javafx.scene.paint.Stop;
-import javafx.scene.shape.Rectangle;
-import javafx.util.Duration;
+
+import javax.imageio.ImageIO;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+import javax.swing.SwingConstants;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 
 /**
  * Title / main menu screen.
  */
-public class MainMenuView extends StackPane {
+public class MainMenuView extends JPanel {
+
+    private static final int PIXEL_SCALE = 4;
+
+    private BufferedImage background;
+    private BufferedImage pixelBuffer;
+
+    private final CherryBlossomAnimation blossoms;
+    private final JPanel content;
 
     public MainMenuView() {
-        // ── Layer 1: Background photo ──────────────────────────────────────
-        ImageView bg = new ImageView();
-        bg.setFitWidth(1280);
-        bg.setFitHeight(720);
-        bg.setPreserveRatio(false);
-        var bgUrl = getClass().getResource("/japan26/images/OutsideCherry.jpg");
-        if (bgUrl != null) bg.setImage(new Image(bgUrl.toExternalForm()));
+        setLayout(null);
 
-        // ── Layer 2: Dark gradient overlay so text is readable ─────────────
-        Rectangle overlay = new Rectangle(1280, 720,
-            new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                new Stop(0.0,  Color.color(0, 0, 0, 0.62)),
-                new Stop(0.45, Color.color(0, 0, 0, 0.42)),
-                new Stop(1.0,  Color.color(0, 0, 0, 0.68))
-            )
-        );
+        blossoms = new CherryBlossomAnimation();
+        blossoms.setEnabled(false);
+        add(blossoms);
 
-        // ── Layer 3: Cherry blossom animation ──────────────────────────────
-        CherryBlossomAnimation blossoms = new CherryBlossomAnimation();
+        content = buildContentPanel();
+        add(content);
 
-        // ── Layer 4: Content ───────────────────────────────────────────────
-        Text titleMain = new Text("JAPAN ");
-        titleMain.setFont(Font.font("Segoe UI", FontWeight.BOLD, 72));
-        titleMain.setFill(Color.web("#f0cd70"));
-        titleMain.setEffect(new DropShadow(28, Color.web("#f0cd70")));
+        try {
+            var bgUrl = getClass().getResource("/japan26/images/OutsideCherry.jpg");
+            if (bgUrl != null) background = ImageIO.read(bgUrl);
+        } catch (IOException ignored) {
+            // Keep null background if image cannot be read
+        }
+    }
 
-        Text title26 = new Text("26");
-        title26.setFont(Font.font("Segoe UI", FontWeight.BOLD, 72));
-        title26.setFill(Color.web("#ffb7c5"));
-        title26.setEffect(new DropShadow(28, Color.web("#ffb7c5")));
+    @Override
+    public void doLayout() {
+        int w = getWidth();
+        int h = getHeight();
+        blossoms.setBounds(0, 0, w, h);
+        Dimension pref = content.getPreferredSize();
+        int cx = (w - pref.width) / 2;
+        int cy = (h - pref.height) / 2;
+        content.setBounds(cx, cy, pref.width, pref.height);
+    }
 
-        TextFlow title = new TextFlow(titleMain, title26);
-        title.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+    private JPanel buildContentPanel() {
+        JPanel panel = new JPanel();
+        panel.setOpaque(false);
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
 
-        Label subtitle = new Label("A Story-Driven Journey  ·  Summer 2026");
-        subtitle.getStyleClass().add("subtitle-label");
+        PixelLabel title = new PixelLabel("JAPAN 26");
+        title.setFont(PixelFont.bold(66f));
+        title.setForeground(new Color(240, 205, 112));
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Thin decorative divider
-        Rectangle divider = new Rectangle(200, 1);
-        divider.setFill(Color.color(0.88, 0.72, 0.38, 0.65));
+        PixelLabel subtitle = new PixelLabel("A Story-Driven Journey  -  Summer 2026");
+        subtitle.setFont(PixelFont.regular(20f));
+        subtitle.setForeground(new Color(230, 230, 230));
+        subtitle.setHorizontalAlignment(SwingConstants.CENTER);
+        subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        Region spacer = new Region();
-        spacer.setMinHeight(8);
+        PixelButton startBtn = menuButton("Begin Journey");
+        startBtn.addActionListener(e -> SceneManager.startGame());
+        PixelButton testBtn = menuButton("Test Story");
+        testBtn.addActionListener(e -> SceneManager.startTestStory());
+        PixelButton quitBtn = menuButton("Quit");
+        quitBtn.addActionListener(e -> System.exit(0));
+        PixelButton settingsBtn = menuButton("Settings");
+        settingsBtn.addActionListener(e -> SettingsDialog.show(SceneManager.getFrame(), true));
+        PixelButton creditsBtn = menuButton("Credits");
+        creditsBtn.addActionListener(e -> CreditsDialog.show(SceneManager.getFrame()));
 
-        Button startBtn = new Button("Begin Journey");
-        startBtn.getStyleClass().add("menu-button");
-        startBtn.setOnAction(e -> SceneManager.startGame());
+        panel.add(title);
+        panel.add(Box.createRigidArea(new Dimension(0, 16)));
+        panel.add(subtitle);
+        panel.add(Box.createRigidArea(new Dimension(0, 40)));
+        panel.add(startBtn);
+        panel.add(Box.createRigidArea(new Dimension(0, 12)));
+        panel.add(testBtn);
+        panel.add(Box.createRigidArea(new Dimension(0, 12)));
+        panel.add(quitBtn);
+        panel.add(Box.createRigidArea(new Dimension(0, 12)));
+        panel.add(settingsBtn);
+        panel.add(Box.createRigidArea(new Dimension(0, 12)));
+        panel.add(creditsBtn);
 
-        Button testBtn = new Button("Test Story");
-        testBtn.getStyleClass().add("menu-button-secondary");
-        testBtn.setOnAction(e -> SceneManager.startTestStory());
+        SwingUtilities.invokeLater(startBtn::requestFocusInWindow);
+        return panel;
+    }
 
-        Button quitBtn = new Button("Quit");
-        quitBtn.getStyleClass().add("menu-button");
-        quitBtn.setOnAction(e -> System.exit(0));
+    private PixelButton menuButton(String text) {
+        PixelButton button = new PixelButton(text);
+        button.setPreferredSize(new Dimension(300, 44));
+        button.setMaximumSize(new Dimension(300, 44));
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        button.setFont(PixelFont.bold(18f));
+        return button;
+    }
 
-        VBox content = new VBox(16, title, subtitle, divider, spacer, startBtn, testBtn, quitBtn);
-        content.setAlignment(Pos.CENTER);
-        content.setPadding(new Insets(40));
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2 = (Graphics2D) g;
+        if (background != null) {
+            int scaledW = Math.max(1, getWidth() / PIXEL_SCALE);
+            int scaledH = Math.max(1, getHeight() / PIXEL_SCALE);
+            if (pixelBuffer == null || pixelBuffer.getWidth() != scaledW || pixelBuffer.getHeight() != scaledH) {
+                pixelBuffer = new BufferedImage(scaledW, scaledH, BufferedImage.TYPE_INT_RGB);
+            }
+            Graphics2D pg = pixelBuffer.createGraphics();
+            pg.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            pg.drawImage(background, 0, 0, scaledW, scaledH, null);
+            pg.dispose();
 
-        getChildren().addAll(bg, overlay, blossoms, content);
-        setAlignment(content, Pos.CENTER);
-
-        // ── Fade-in on load ────────────────────────────────────────────────
-        content.setOpacity(0);
-        FadeTransition fadeIn = new FadeTransition(Duration.millis(900), content);
-        fadeIn.setFromValue(0);
-        fadeIn.setToValue(1);
-        fadeIn.setDelay(Duration.millis(150));
-        fadeIn.play();
-
-        // ── Stylesheet ─────────────────────────────────────────────────────
-        var css = getClass().getResource("/japan26/css/style.css");
-        if (css != null) getStylesheets().add(css.toExternalForm());
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            g2.drawImage(pixelBuffer, 0, 0, getWidth(), getHeight(), null);
+        } else {
+            g2.setPaint(new GradientPaint(0, 0, new Color(35, 35, 45), 0, getHeight(), new Color(10, 10, 16)));
+            g2.fillRect(0, 0, getWidth(), getHeight());
+        }
+        g2.setColor(new Color(0, 0, 0, 140));
+        g2.fillRect(0, 0, getWidth(), getHeight());
     }
 }

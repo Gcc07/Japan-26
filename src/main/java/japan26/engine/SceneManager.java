@@ -7,40 +7,40 @@ import japan26.story.StoryData;
 import japan26.story.TestStory;
 import japan26.ui.GameView;
 import japan26.ui.MainMenuView;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
 
+import javax.swing.JFrame;
 import java.util.List;
 
 /**
- * Central hub for switching between the main JavaFX Scenes (screens):
+ * Central hub for switching between the main Swing screens:
  *   Main Menu  →  Story / Game  →  Minigame  →  Story / Game  → ...
  *
- * Call SceneManager.init(stage) once at startup, then use the static helpers.
+ * Call SceneManager.init() once at startup, then use the static helpers.
  */
 public class SceneManager {
 
-    private static Stage      primaryStage;
+    private static JFrame     primaryFrame;
     private static StoryEngine storyEngine;
 
     // ── Initialisation ────────────────────────────────────────────────────────
 
-    public static void init(Stage stage) {
-        primaryStage = stage;
+    public static void init() {
+        primaryFrame = new JFrame("Japan 26");
         storyEngine  = new StoryEngine();
-
-        stage.setTitle("Japan 26");
-        stage.setWidth(1280);
-        stage.setHeight(720);
-        stage.setResizable(false);
+        primaryFrame.setSize(1280, 720);
+        primaryFrame.setResizable(false);
+        primaryFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        primaryFrame.setLocationRelativeTo(null);
     }
 
     // ── Screen transitions ────────────────────────────────────────────────────
 
     public static void showMainMenu() {
         MainMenuView menu = new MainMenuView();
-        primaryStage.setScene(new Scene(menu, 1280, 720));
-        primaryStage.show();
+        primaryFrame.setContentPane(menu);
+        primaryFrame.revalidate();
+        primaryFrame.repaint();
+        primaryFrame.setVisible(true);
     }
 
     public static void startGame() {
@@ -53,7 +53,9 @@ public class SceneManager {
 
     public static void startGame(List<StoryScene> story) {
         GameView gameView = new GameView(storyEngine, story);
-        primaryStage.setScene(new Scene(gameView, 1280, 720));
+        primaryFrame.setContentPane(gameView);
+        primaryFrame.revalidate();
+        primaryFrame.repaint();
     }
 
     /**
@@ -71,11 +73,11 @@ public class SceneManager {
             onComplete.run();
             startGame(); // return to story view
         });
-        game.start(primaryStage);
+        game.start(primaryFrame);
     }
 
     // ── Accessors ─────────────────────────────────────────────────────────────
 
-    public static Stage       getStage()       { return primaryStage; }
+    public static JFrame      getFrame()       { return primaryFrame; }
     public static StoryEngine getStoryEngine() { return storyEngine; }
 }

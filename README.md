@@ -47,3 +47,15 @@
 * The different classes and setups will be be manually coded for the most part. 
 
 ---
+
+### Run (Swing + javac, no Maven)
+
+From the project root:
+
+```powershell
+.\run.ps1
+```
+
+Optional:
+- `.\run.bat`
+- `.\run.ps1 -NoClean` (skip deleting `out` first)

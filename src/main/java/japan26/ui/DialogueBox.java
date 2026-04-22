@@ -2,12 +2,16 @@ package japan26.ui;
 
 import japan26.model.Character;
 import japan26.model.DialogueLine;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
-import javafx.geometry.Insets;
-import javafx.scene.control.Label;
-import javafx.scene.layout.VBox;
-import javafx.util.Duration;
+
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+import javax.swing.Timer;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 
 /**
  * The translucent text box shown at the bottom of the screen.
@@ -18,36 +22,38 @@ import javafx.util.Duration;
  * Call skipTyping() to reveal the full text immediately (e.g. on click).
  * isTyping() tells the GameView whether to skip or advance.
  */
-public class DialogueBox extends VBox {
+public class DialogueBox extends JPanel {
 
     private static final double CHAR_DELAY_MS = 25; // ms per character
 
-    private final Label nameLabel;
-    private final Label textLabel;
-    private final Label continueHint;
+    private final PixelLabel nameLabel;
+    private final PixelLabel textLabel;
+    private final PixelLabel continueHint;
 
-    private Timeline typewriterTimeline;
+    private Timer    typewriterTimer;
     private String   fullText  = "";
     private boolean  typing    = false;
 
     public DialogueBox() {
-        getStyleClass().add("dialogue-box");
-        setSpacing(6);
-        setPadding(new Insets(20, 30, 16, 30));
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setOpaque(false);
+        setBorder(BorderFactory.createEmptyBorder(20, 30, 16, 30));
 
-        nameLabel    = new Label();
-        nameLabel.getStyleClass().add("character-name");
+        nameLabel = new PixelLabel("");
+        nameLabel.setFont(PixelFont.bold(20f));
 
-        textLabel    = new Label();
-        textLabel.getStyleClass().add("dialogue-text");
-        textLabel.setWrapText(true);
-        textLabel.setMaxWidth(Double.MAX_VALUE);
+        textLabel = new PixelLabel("");
+        textLabel.setFont(PixelFont.regular(22f));
+        textLabel.setForeground(Color.WHITE);
 
-        continueHint = new Label("▼");
-        continueHint.getStyleClass().add("continue-hint");
+        continueHint = new PixelLabel("\u25BE");
+        continueHint.setFont(PixelFont.bold(20f));
+        continueHint.setHorizontalAlignment(SwingConstants.RIGHT);
         continueHint.setVisible(false);
 
-        getChildren().addAll(nameLabel, textLabel, continueHint);
+        add(nameLabel);
+        add(textLabel);
+        add(continueHint);
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -57,11 +63,9 @@ public class DialogueBox extends VBox {
 
         boolean isNarrator = ch.getName().isEmpty();
         nameLabel.setText(isNarrator ? "" : ch.getName());
-        nameLabel.setStyle("-fx-text-fill: " + ch.getColor() + ";");
+        nameLabel.setForeground(Color.decode(ch.getColor()));
         nameLabel.setVisible(!isNarrator);
-
-        textLabel.getStyleClass().removeAll("dialogue-text", "narrator-text");
-        textLabel.getStyleClass().add(isNarrator ? "narrator-text" : "dialogue-text");
+        textLabel.setForeground(isNarrator ? new Color(235, 235, 235) : Color.WHITE);
 
         startTypewriter(line.getText());
     }
@@ -70,8 +74,8 @@ public class DialogueBox extends VBox {
 
     public void skipTyping() {
         if (!typing) return;
-        if (typewriterTimeline != null) typewriterTimeline.stop();
-        textLabel.setText(fullText);
+        if (typewriterTimer != null) typewriterTimer.stop();
+        textLabel.setText(toHtml(fullText));
         typing = false;
         continueHint.setVisible(true);
     }
@@ -79,25 +83,39 @@ public class DialogueBox extends VBox {
     // ── Internal ──────────────────────────────────────────────────────────────
 
     private void startTypewriter(String text) {
-        if (typewriterTimeline != null) typewriterTimeline.stop();
+        if (typewriterTimer != null) typewriterTimer.stop();
 
         fullText = text;
         typing   = true;
         continueHint.setVisible(false);
         textLabel.setText("");
 
-        typewriterTimeline = new Timeline();
-        for (int i = 1; i <= text.length(); i++) {
-            final int idx = i;
-            typewriterTimeline.getKeyFrames().add(
-                new KeyFrame(Duration.millis(CHAR_DELAY_MS * i),
-                    e -> textLabel.setText(text.substring(0, idx)))
-            );
-        }
-        typewriterTimeline.setOnFinished(e -> {
-            typing = false;
-            continueHint.setVisible(true);
+        final int[] idx = {0};
+        typewriterTimer = new Timer((int) CHAR_DELAY_MS, e -> {
+            idx[0]++;
+            if (idx[0] >= fullText.length()) {
+                textLabel.setText(toHtml(fullText));
+                typing = false;
+                continueHint.setVisible(true);
+                typewriterTimer.stop();
+                return;
+            }
+            textLabel.setText(toHtml(fullText.substring(0, idx[0])));
         });
-        typewriterTimeline.play();
+        typewriterTimer.start();
+    }
+
+    private String toHtml(String text) {
+        return "<html><body style='width:1120px'>" + text + "</body></html>";
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setColor(new Color(24, 20, 28, 200));
+        g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
+        g2.dispose();
+        super.paintComponent(g);
     }
 }

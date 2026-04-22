@@ -4,13 +4,20 @@ import japan26.engine.SceneManager;
 import japan26.engine.StoryEngine;
 import japan26.model.DialogueLine;
 import japan26.model.StoryScene;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyCode;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+
+import javax.imageio.ImageIO;
+import javax.swing.BorderFactory;
+import javax.swing.JPanel;
+import javax.swing.KeyStroke;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 
 /**
  * Main game screen: a full-window StackPane with a background image layer and
@@ -18,41 +25,55 @@ import javafx.scene.layout.VBox;
  *
  * Click anywhere (or press Space / Enter) to advance dialogue.
  */
-public class GameView extends StackPane {
+public class GameView extends JPanel {
 
     private static final String FALLBACK_BG = "/japan26/images/Skyline.jpg";
+    private static final int PIXEL_SCALE = 4;
 
     private final StoryEngine engine;
-    private final ImageView   background;
+    private BufferedImage     background;
+    private BufferedImage     pixelBuffer;
     private final DialogueBox dialogueBox;
 
     public GameView(StoryEngine engine, java.util.List<StoryScene> story) {
         this.engine = engine;
 
-        // ── Background image layer ─────────────────────────────────────────
-        background = new ImageView();
-        background.setPreserveRatio(false);
-        background.setFitWidth(1280);
-        background.setFitHeight(720);
+        setLayout(new BorderLayout());
+        setFocusable(true);
 
-        // ── Dialogue box pinned to the bottom ──────────────────────────────
         dialogueBox = new DialogueBox();
-        dialogueBox.setMaxWidth(1200);
-        dialogueBox.setMinHeight(160);
+        dialogueBox.setPreferredSize(new java.awt.Dimension(1200, 180));
 
-        VBox bottomBar = new VBox(dialogueBox);
-        bottomBar.setAlignment(Pos.BOTTOM_CENTER);
-        bottomBar.setPadding(new Insets(0, 40, 30, 40));
+        JPanel bottomBar = new JPanel(new BorderLayout());
+        bottomBar.setOpaque(false);
+        bottomBar.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 40, 30, 40));
+        bottomBar.add(dialogueBox, BorderLayout.CENTER);
 
-        getChildren().addAll(background, bottomBar);
-        StackPane.setAlignment(bottomBar, Pos.BOTTOM_CENTER);
+        add(bottomBar, BorderLayout.SOUTH);
 
-        // ── Input ──────────────────────────────────────────────────────────
-        setOnMouseClicked(e -> handleAdvance());
-        setFocusTraversable(true);
-        setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.SPACE || e.getCode() == KeyCode.ENTER) {
-                handleAdvance();
+        JPanel topBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 18, 14));
+        topBar.setOpaque(false);
+        PixelButton settingsBtn = new PixelButton("Settings");
+        settingsBtn.setFont(PixelFont.bold(14f));
+        settingsBtn.setPreferredSize(new java.awt.Dimension(170, 38));
+        settingsBtn.setMaximumSize(new java.awt.Dimension(170, 38));
+        settingsBtn.addActionListener(e -> SettingsDialog.show(SceneManager.getFrame(), false));
+        topBar.add(settingsBtn);
+        topBar.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
+        add(topBar, BorderLayout.NORTH);
+
+        addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) { handleAdvance(); }
+        });
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("SPACE"), "advance");
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ENTER"), "advance");
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ESCAPE"), "settings");
+        getActionMap().put("advance", new javax.swing.AbstractAction() {
+            @Override public void actionPerformed(java.awt.event.ActionEvent e) { handleAdvance(); }
+        });
+        getActionMap().put("settings", new javax.swing.AbstractAction() {
+            @Override public void actionPerformed(java.awt.event.ActionEvent e) {
+                SettingsDialog.show(SceneManager.getFrame(), false);
             }
         });
 
@@ -61,13 +82,8 @@ public class GameView extends StackPane {
         engine.setOnSceneChanged(this::refreshScene);
         engine.setOnStoryFinished(this::onStoryDone);
 
-        // ── Stylesheet ────────────────────────────────────────────────────
-        var css = getClass().getResource("/japan26/css/style.css");
-        if (css != null) getStylesheets().add(css.toExternalForm());
-
-        // ── Load and start the story ───────────────────────────────────────
         engine.loadStory(story);
-        requestFocus();
+        requestFocusInWindow();
     }
 
     // ── Advance logic ─────────────────────────────────────────────────────────
@@ -98,14 +114,42 @@ public class GameView extends StackPane {
     private void setBackground(String resourcePath) {
         try {
             var url = getClass().getResource(resourcePath);
-            if (url == null) url = getClass().getResource(FALLBACK_BG);
-            if (url != null) background.setImage(new Image(url.toExternalForm()));
-        } catch (Exception ignored) {
+            if (url == null) {
+                url = getClass().getResource(FALLBACK_BG);
+            }
+            if (url != null) {
+                background = ImageIO.read(url);
+            }
+        } catch (IOException ignored) {
             // Background stays as-is if the image is missing
         }
+        pixelBuffer = null;
+        repaint();
     }
 
     private void onStoryDone() {
         SceneManager.showMainMenu();
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (background != null) {
+            Graphics2D g2 = (Graphics2D) g;
+            int scaledW = Math.max(1, getWidth() / PIXEL_SCALE);
+            int scaledH = Math.max(1, getHeight() / PIXEL_SCALE);
+
+            if (pixelBuffer == null || pixelBuffer.getWidth() != scaledW || pixelBuffer.getHeight() != scaledH) {
+                pixelBuffer = new BufferedImage(scaledW, scaledH, BufferedImage.TYPE_INT_RGB);
+            }
+
+            Graphics2D pg = pixelBuffer.createGraphics();
+            pg.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            pg.drawImage(background, 0, 0, scaledW, scaledH, null);
+            pg.dispose();
+
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            g2.drawImage(pixelBuffer, 0, 0, getWidth(), getHeight(), null);
+        }
     }
 }
