@@ -22,6 +22,9 @@ import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -41,6 +44,8 @@ public class RhythmDrumMinigame implements Minigame {
     private static final int BEAT_INTERVAL_MS = (int) Math.round(60_000.0 / BPM);
     private static final Path TRACK_PATH = Paths.get(
             "src", "main", "java", "japan26", "SFX", "SFX pack", "i-can-feel-it-coming-in-the-air-tonight.wav");
+    private static final Path TEMPLATE_PATH = Paths.get(
+            "src", "main", "resources", "japan26", "minigame", "rhythm_template.csv");
 
     private Runnable onComplete;
 
@@ -61,6 +66,12 @@ public class RhythmDrumMinigame implements Minigame {
     }
 
     private static class RhythmPanel extends JPanel {
+        private static final float NOTE_SPEED_PX_PER_MS = 0.36f;
+        private static final int NOTE_SPAWN_Y = -26;
+        private static final int JUDGMENT_Y = 350;
+        private static final int NOTE_TRAVEL_MS =
+                Math.round((JUDGMENT_Y - NOTE_SPAWN_Y) / NOTE_SPEED_PX_PER_MS);
+
         private final Random rng = new Random();
         private final List<Note> notes = new ArrayList<>();
         private final LaneCanvas laneCanvas = new LaneCanvas();
@@ -69,6 +80,8 @@ public class RhythmDrumMinigame implements Minigame {
         private final PixelLabel scoreLabel = new PixelLabel("Score: 0");
         private final PixelLabel infoLabel = new PixelLabel("Keys: A / S / K / L");
         private final PixelButton finishButton = new PixelButton("Finish");
+        private final PixelButton recordButton = new PixelButton("Record Template");
+        private final PixelButton clearTemplateButton = new PixelButton("Clear Template");
 
         private final Runnable onFinish;
         private Timer gameLoop;
@@ -78,6 +91,10 @@ public class RhythmDrumMinigame implements Minigame {
         private int combo = 0;
         private boolean finished = false;
         private Clip musicClip;
+        private boolean recordingMode = false;
+        private final List<TemplateNote> recordedTemplate = new ArrayList<>();
+        private final List<TemplateNote> templateNotes = new ArrayList<>();
+        private int templateSpawnIndex = 0;
 
         private int spawnAccumulatorMs = 0;
 
@@ -92,9 +109,21 @@ public class RhythmDrumMinigame implements Minigame {
             stylizeLabel(scoreLabel, 16f, new Color(188, 224, 255));
             stylizeLabel(infoLabel, 14f, new Color(214, 214, 214));
             infoLabel.setText("95 BPM  |  Keys: A / S / K / L");
+            loadTemplate();
             top.add(timeLabel);
             top.add(scoreLabel);
             top.add(infoLabel);
+            recordButton.setFont(PixelFont.bold(14f));
+            recordButton.setPreferredSize(new Dimension(220, 34));
+            recordButton.setMaximumSize(new Dimension(220, 34));
+            recordButton.addActionListener(e -> beginTemplateRecording());
+            top.add(recordButton);
+
+            clearTemplateButton.setFont(PixelFont.bold(14f));
+            clearTemplateButton.setPreferredSize(new Dimension(220, 34));
+            clearTemplateButton.setMaximumSize(new Dimension(220, 34));
+            clearTemplateButton.addActionListener(e -> clearTemplate());
+            top.add(clearTemplateButton);
 
             JPanel centerWrap = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 20));
             centerWrap.setOpaque(false);
@@ -154,20 +183,31 @@ public class RhythmDrumMinigame implements Minigame {
             if (finished) return;
 
             remainingMs = Math.max(0, remainingMs - dtMs);
-            spawnAccumulatorMs += dtMs;
-            while (spawnAccumulatorMs >= BEAT_INTERVAL_MS) {
-                spawnAccumulatorMs -= BEAT_INTERVAL_MS;
-                // Keep rhythm steady while allowing slight variation in density.
-                if (rng.nextFloat() < 0.82f) {
-                    notes.add(new Note(rng.nextInt(4), -26f));
+            int elapsedMs = DURATION_MS - remainingMs;
+            if (!recordingMode) {
+                if (!templateNotes.isEmpty()) {
+                    while (templateSpawnIndex < templateNotes.size()
+                            && templateNotes.get(templateSpawnIndex).spawnTimeMs() <= elapsedMs) {
+                        TemplateNote t = templateNotes.get(templateSpawnIndex++);
+                        notes.add(new Note(t.lane, NOTE_SPAWN_Y));
+                    }
+                } else {
+                    spawnAccumulatorMs += dtMs;
+                    while (spawnAccumulatorMs >= BEAT_INTERVAL_MS) {
+                        spawnAccumulatorMs -= BEAT_INTERVAL_MS;
+                        // Keep rhythm steady while allowing slight variation in density.
+                        if (rng.nextFloat() < 0.82f) {
+                            notes.add(new Note(rng.nextInt(4), NOTE_SPAWN_Y));
+                        }
+                    }
                 }
             }
 
             Iterator<Note> it = notes.iterator();
             while (it.hasNext()) {
                 Note n = it.next();
-                n.y += dtMs * 0.36f;
-                if (n.y > LaneCanvas.JUDGMENT_Y + 80) {
+                n.y += dtMs * NOTE_SPEED_PX_PER_MS;
+                if (n.y > JUDGMENT_Y + 80) {
                     it.remove();
                     combo = 0;
                 }
@@ -194,12 +234,19 @@ public class RhythmDrumMinigame implements Minigame {
         }
 
         private void handleHit(int lane) {
+            if (recordingMode && lane >= 0) {
+                int elapsedMs = DURATION_MS - remainingMs;
+                recordedTemplate.add(new TemplateNote(elapsedMs, lane));
+                UISound.playSelect();
+                return;
+            }
+
             Note best = null;
             float bestDistance = Float.MAX_VALUE;
 
             for (Note n : notes) {
                 if (lane >= 0 && n.lane != lane) continue;
-                float d = Math.abs(n.y - LaneCanvas.JUDGMENT_Y);
+                float d = Math.abs(n.y - JUDGMENT_Y);
                 if (d < bestDistance) {
                     bestDistance = d;
                     best = n;
@@ -233,15 +280,22 @@ public class RhythmDrumMinigame implements Minigame {
             gameLoop.stop();
             notes.clear();
             stopBackingTrack();
+            recordButton.setVisible(false);
 
-            boolean won = score >= TARGET_SCORE;
-            if (won) {
-                PlayerRewards.unlock(REWARD_ITEM);
-                infoLabel.setText("Cleared! Reward unlocked: " + REWARD_ITEM);
+            if (recordingMode) {
+                saveTemplate(recordedTemplate);
+                infoLabel.setText("Template saved (" + recordedTemplate.size() + " notes).");
                 infoLabel.setForeground(new Color(168, 243, 168));
             } else {
-                infoLabel.setText("Score " + score + "/" + TARGET_SCORE + " - no reward this run.");
-                infoLabel.setForeground(new Color(255, 188, 188));
+                boolean won = score >= TARGET_SCORE;
+                if (won) {
+                    PlayerRewards.unlock(REWARD_ITEM);
+                    infoLabel.setText("Cleared! Reward unlocked: " + REWARD_ITEM);
+                    infoLabel.setForeground(new Color(168, 243, 168));
+                } else {
+                    infoLabel.setText("Score " + score + "/" + TARGET_SCORE + " - no reward this run.");
+                    infoLabel.setForeground(new Color(255, 188, 188));
+                }
             }
 
             finishButton.setVisible(true);
@@ -270,9 +324,80 @@ public class RhythmDrumMinigame implements Minigame {
             }
         }
 
+        private void beginTemplateRecording() {
+            recordingMode = true;
+            recordedTemplate.clear();
+            notes.clear();
+            score = 0;
+            combo = 0;
+            remainingMs = DURATION_MS;
+            templateSpawnIndex = 0;
+            spawnAccumulatorMs = 0;
+            infoLabel.setText("Recording template... play A/S/K/L to capture note timing.");
+            infoLabel.setForeground(new Color(255, 223, 158));
+            timeLabel.setText("Time: 30.0");
+            scoreLabel.setText("Score: REC");
+            stopBackingTrack();
+            startBackingTrack();
+        }
+
+        private void loadTemplate() {
+            templateNotes.clear();
+            if (!Files.exists(TEMPLATE_PATH)) return;
+            try {
+                List<String> lines = Files.readAllLines(TEMPLATE_PATH, StandardCharsets.UTF_8);
+                for (String line : lines) {
+                    if (line.isBlank() || line.startsWith("#")) continue;
+                    String[] parts = line.split(",");
+                    if (parts.length != 2) continue;
+                    int timeMs = Integer.parseInt(parts[0].trim());
+                    int lane = Integer.parseInt(parts[1].trim());
+                    if (lane >= 0 && lane <= 3 && timeMs >= 0 && timeMs <= DURATION_MS) {
+                        templateNotes.add(new TemplateNote(timeMs, lane));
+                    }
+                }
+                templateNotes.sort((a, b) -> Integer.compare(a.timeMs, b.timeMs));
+                if (!templateNotes.isEmpty()) {
+                    infoLabel.setText("95 BPM  |  Template loaded (" + templateNotes.size() + " notes)");
+                }
+            } catch (NumberFormatException | IOException ignored) {
+                // Fall back to generated notes if template parse fails.
+                templateNotes.clear();
+            }
+        }
+
+        private void saveTemplate(List<TemplateNote> template) {
+            try {
+                Files.createDirectories(TEMPLATE_PATH.getParent());
+                List<String> lines = new ArrayList<>();
+                lines.add("# timeMs,lane (lane: 0=A, 1=S, 2=K, 3=L)");
+                for (TemplateNote n : template) {
+                    lines.add(n.timeMs + "," + n.lane);
+                }
+                Files.write(TEMPLATE_PATH, lines, StandardCharsets.UTF_8);
+                templateNotes.clear();
+                templateNotes.addAll(template);
+                templateNotes.sort((a, b) -> Integer.compare(a.timeMs, b.timeMs));
+            } catch (IOException ignored) {
+                infoLabel.setText("Template save failed (check file permissions).");
+                infoLabel.setForeground(new Color(255, 188, 188));
+            }
+        }
+
+        private void clearTemplate() {
+            try {
+                Files.deleteIfExists(TEMPLATE_PATH);
+            } catch (IOException ignored) {
+                // Continue with in-memory clear even if file deletion fails.
+            }
+            templateNotes.clear();
+            templateSpawnIndex = 0;
+            infoLabel.setText("Template cleared. Using generated 95 BPM notes.");
+            infoLabel.setForeground(new Color(255, 223, 158));
+        }
+
         private class LaneCanvas extends JPanel {
             private static final int LANE_COUNT = 4;
-            private static final int JUDGMENT_Y = 350;
 
             LaneCanvas() {
                 setOpaque(true);
@@ -327,6 +452,20 @@ public class RhythmDrumMinigame implements Minigame {
         Note(int lane, float y) {
             this.lane = lane;
             this.y = y;
+        }
+    }
+
+    private static class TemplateNote {
+        final int timeMs;
+        final int lane;
+
+        TemplateNote(int timeMs, int lane) {
+            this.timeMs = timeMs;
+            this.lane = lane;
+        }
+
+        int spawnTimeMs() {
+            return Math.max(0, timeMs - RhythmPanel.NOTE_TRAVEL_MS);
         }
     }
 }
