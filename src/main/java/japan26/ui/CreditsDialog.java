@@ -3,28 +3,50 @@ package japan26.ui;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
+import javax.swing.SwingUtilities;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 
 /**
- * Credits dialog shown from the main menu.
+ * Credits content shown in-app (e.g. as an overlay on the main menu).
  */
 public final class CreditsDialog {
     private CreditsDialog() {
     }
 
-    public static void show(Frame owner) {
-        JDialog dialog = new JDialog(owner, "Credits", true);
-        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        dialog.setSize(480, 420);
-        dialog.setLocationRelativeTo(owner);
-        dialog.setResizable(false);
+    /**
+     * Full-size semi-transparent overlay with a centered credits card.
+     * {@code onClose} runs when the player chooses Back.
+     */
+    public static JPanel createCreditsOverlay(Runnable onClose) {
+        JPanel dim = new JPanel(new GridBagLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setColor(new Color(8, 6, 12, 228));
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        dim.setOpaque(false);
 
+        JPanel card = buildCreditsCard(onClose);
+        GridBagConstraints c = new GridBagConstraints();
+        c.gridx = 0;
+        c.gridy = 0;
+        dim.add(card, c);
+        return dim;
+    }
+
+    private static JPanel buildCreditsCard(Runnable onClose) {
         JPanel root = new JPanel();
         root.setLayout(new BoxLayout(root, BoxLayout.Y_AXIS));
         root.setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
@@ -32,6 +54,14 @@ public final class CreditsDialog {
 
         root.add(heading("CREDITS"));
         root.add(Box.createRigidArea(new Dimension(0, 22)));
+
+        root.add(divider());
+        root.add(Box.createRigidArea(new Dimension(0, 14)));
+
+        root.add(role("Art, Pictures & Game Direction"));
+        root.add(Box.createRigidArea(new Dimension(0, 6)));
+        root.add(name("Gabe Cardenas"));
+        root.add(Box.createRigidArea(new Dimension(0, 18)));
 
         root.add(divider());
         root.add(Box.createRigidArea(new Dimension(0, 14)));
@@ -60,16 +90,16 @@ public final class CreditsDialog {
         root.add(divider());
         root.add(Box.createRigidArea(new Dimension(0, 22)));
 
-        PixelButton closeBtn = new PixelButton("Close");
-        closeBtn.setFont(PixelFont.bold(16f));
-        closeBtn.setPreferredSize(new Dimension(260, 40));
-        closeBtn.setMaximumSize(new Dimension(260, 40));
-        closeBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
-        closeBtn.addActionListener(e -> dialog.dispose());
-        root.add(closeBtn);
+        PixelButton backBtn = new PixelButton("Back");
+        backBtn.setFont(PixelFont.bold(16f));
+        backBtn.setPreferredSize(new Dimension(260, 40));
+        backBtn.setMaximumSize(new Dimension(260, 40));
+        backBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        backBtn.addActionListener(e -> onClose.run());
+        root.add(backBtn);
 
-        dialog.setContentPane(root);
-        dialog.setVisible(true);
+        SwingUtilities.invokeLater(backBtn::requestFocusInWindow);
+        return root;
     }
 
     private static PixelLabel heading(String text) {

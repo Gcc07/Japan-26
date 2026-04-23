@@ -15,13 +15,15 @@ public class DialogueLine {
     private final String    choiceId;
     private final List<String> choiceOptions;
     private final Map<String, String> choiceResponses;
+    /** Optional per-choice background paths: choice option → resource path. */
+    private final Map<String, String> choiceBgPaths;
 
     public DialogueLine(Character character, String text) {
-        this(character, text, null, null, List.of(), Map.of());
+        this(character, text, null, null, List.of(), Map.of(), Map.of());
     }
 
     public DialogueLine(Character character, String text, String backgroundPath) {
-        this(character, text, backgroundPath, null, List.of(), Map.of());
+        this(character, text, backgroundPath, null, List.of(), Map.of(), Map.of());
     }
 
     private DialogueLine(
@@ -30,14 +32,16 @@ public class DialogueLine {
             String backgroundPath,
             String choiceId,
             List<String> choiceOptions,
-            Map<String, String> choiceResponses
+            Map<String, String> choiceResponses,
+            Map<String, String> choiceBgPaths
     ) {
-        this.character      = character;
-        this.text           = text;
-        this.backgroundPath = backgroundPath;
-        this.choiceId       = choiceId;
-        this.choiceOptions  = choiceOptions;
+        this.character       = character;
+        this.text            = text;
+        this.backgroundPath  = backgroundPath;
+        this.choiceId        = choiceId;
+        this.choiceOptions   = choiceOptions;
         this.choiceResponses = choiceResponses;
+        this.choiceBgPaths   = choiceBgPaths;
     }
 
     /** Factory for a line that presents selectable choices to the player. */
@@ -48,6 +52,7 @@ public class DialogueLine {
                 null,
                 choiceId,
                 List.of(options),
+                Map.of(),
                 Map.of()
         );
     }
@@ -65,7 +70,27 @@ public class DialogueLine {
                 null,
                 choiceId,
                 List.of(),
-                responsesByOption
+                responsesByOption,
+                Map.of()
+        );
+    }
+
+    /** Factory for a choice response that also swaps backgrounds per option. */
+    public static DialogueLine choiceResponseWithBg(
+            Character character,
+            String choiceId,
+            String defaultText,
+            Map<String, String> responsesByOption,
+            Map<String, String> bgByOption
+    ) {
+        return new DialogueLine(
+                character,
+                defaultText,
+                null,
+                choiceId,
+                List.of(),
+                responsesByOption,
+                bgByOption
         );
     }
 
@@ -81,4 +106,10 @@ public class DialogueLine {
         if (selectedOption == null) return text;
         return choiceResponses.getOrDefault(selectedOption, text);
     }
+    /** Returns per-choice background path, or null if none set for that option. */
+    public String getBgForChoice(String selectedOption) {
+        if (selectedOption == null) return null;
+        return choiceBgPaths.isEmpty() ? null : choiceBgPaths.getOrDefault(selectedOption, null);
+    }
+    public boolean hasChoiceBgPaths() { return !choiceBgPaths.isEmpty(); }
 }

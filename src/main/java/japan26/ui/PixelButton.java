@@ -86,6 +86,10 @@ public class PixelButton extends JButton {
 
         Color fill   = blend(new Color(70, 52, 86), new Color(112, 80, 140), hoverProgress);
         Color border = blend(new Color(164, 138, 196), new Color(255, 214, 120), hoverProgress);
+        if (!isEnabled()) {
+            fill   = blend(fill, new Color(28, 24, 36), 0.55f);
+            border = blend(border, new Color(80, 72, 96), 0.55f);
+        }
         RoundRectangle2D shape = new RoundRectangle2D.Float(
                 inset, inset, w - inset * 2, h - inset * 2, 12, 12);
         g2.setColor(fill);

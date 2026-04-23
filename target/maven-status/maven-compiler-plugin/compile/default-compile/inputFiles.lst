@@ -1,14 +1,25 @@
-C:\Users\gcard\Documents\GitHub\Japan-26\src\main\java\japan26\engine\SceneManager.java
-C:\Users\gcard\Documents\GitHub\Japan-26\src\main\java\japan26\engine\StoryEngine.java
-C:\Users\gcard\Documents\GitHub\Japan-26\src\main\java\japan26\Main.java
-C:\Users\gcard\Documents\GitHub\Japan-26\src\main\java\japan26\minigame\Minigame.java
-C:\Users\gcard\Documents\GitHub\Japan-26\src\main\java\japan26\minigame\MinigameRegistry.java
-C:\Users\gcard\Documents\GitHub\Japan-26\src\main\java\japan26\model\Character.java
-C:\Users\gcard\Documents\GitHub\Japan-26\src\main\java\japan26\model\DialogueLine.java
-C:\Users\gcard\Documents\GitHub\Japan-26\src\main\java\japan26\model\StoryScene.java
-C:\Users\gcard\Documents\GitHub\Japan-26\src\main\java\japan26\story\StoryData.java
-C:\Users\gcard\Documents\GitHub\Japan-26\src\main\java\japan26\story\TestStory.java
-C:\Users\gcard\Documents\GitHub\Japan-26\src\main\java\japan26\ui\CherryBlossomAnimation.java
-C:\Users\gcard\Documents\GitHub\Japan-26\src\main\java\japan26\ui\DialogueBox.java
-C:\Users\gcard\Documents\GitHub\Japan-26\src\main\java\japan26\ui\GameView.java
-C:\Users\gcard\Documents\GitHub\Japan-26\src\main\java\japan26\ui\MainMenuView.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\engine\SceneManager.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\engine\StoryEngine.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\Main.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\minigame\Minigame.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\minigame\MinigameRegistry.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\minigame\PlaceholderMinigame.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\minigame\PlayerRewards.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\minigame\RhythmDrumMinigame.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\model\Character.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\model\DialogueLine.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\model\StoryScene.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\story\MinigameTestStory.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\story\StoryData.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\story\TestStory.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\ui\CherryBlossomAnimation.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\ui\CreditsDialog.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\ui\DialogueBox.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\ui\GameView.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\ui\MainMenuView.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\ui\PixelButton.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\ui\PixelFont.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\ui\PixelLabel.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\ui\SettingsDialog.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\ui\SettingsState.java
+C:\Users\gcard\Misc Github\New folder\Japan-26\src\main\java\japan26\ui\UISound.java

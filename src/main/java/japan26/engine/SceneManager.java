@@ -62,7 +62,14 @@ public class SceneManager {
     }
 
     public static void startGameWithNamePrompt() {
-        startGame(StoryData.buildStory(), true);
+        playSceneTransition(() -> {
+            GameView gameView = new GameView(storyEngine, java.util.List.of(), true);
+            // Defer story build until after name/preset are confirmed in the prompt.
+            gameView.setDeferredStorySupplier(StoryData::buildStory);
+            primaryFrame.setContentPane(gameView);
+            primaryFrame.revalidate();
+            primaryFrame.repaint();
+        });
     }
 
     public static void startTestStory() {
@@ -86,6 +93,16 @@ public class SceneManager {
         });
     }
 
+    /** Return to the already-running story state (used after minigames). */
+    private static void resumeCurrentStoryView() {
+        playSceneTransition(() -> {
+            GameView gameView = new GameView(storyEngine, List.of(), false, true);
+            primaryFrame.setContentPane(gameView);
+            primaryFrame.revalidate();
+            primaryFrame.repaint();
+        });
+    }
+
     /**
      * Launches the minigame registered under {@code key}.
      * When the minigame signals completion it calls {@code onComplete}.
@@ -99,7 +116,7 @@ public class SceneManager {
         }
         game.setOnComplete(() -> {
             onComplete.run();
-            startGame(); // return to story view
+            resumeCurrentStoryView();
         });
         game.start(primaryFrame);
     }

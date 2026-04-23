@@ -1,5 +1,6 @@
 package japan26.ui;
 
+import japan26.minigame.PlayerRewards;
 import japan26.model.Character;
 import japan26.model.DialogueLine;
 
@@ -48,7 +49,7 @@ public class DialogueBox extends JPanel {
         textLabel.setFont(PixelFont.regular(22f));
         textLabel.setForeground(Color.WHITE);
 
-        continueHint = new PixelLabel("\u25BE");
+        continueHint = new PixelLabel("<>");
         continueHint.setFont(PixelFont.bold(20f));
         continueHint.setHorizontalAlignment(SwingConstants.RIGHT);
         continueHint.setVisible(false);
@@ -107,10 +108,22 @@ public class DialogueBox extends JPanel {
         fullText = text;
         typing   = true;
         continueHint.setVisible(false);
-        textLabel.setText("");
+
+        final Color revealColor = nameLabel.isVisible() ? Color.WHITE : new Color(235, 235, 235);
+
+        // Pre-size: render the full text using CSS color:transparent so the label
+        // claims its final height with no visible text — avoids both layout jumps
+        // AND the alpha-ignored black flash that Color(0,0,0,0) caused.
+        textLabel.setForeground(revealColor);
+        textLabel.setText(toHtmlHidden(fullText));
+        revalidate();
 
         final int[] idx = {0};
         typewriterTimer = new Timer((int) CHAR_DELAY_MS, e -> {
+            // On first tick swap to the real (visible) HTML and begin typing.
+            if (idx[0] == 0) {
+                textLabel.setText(toHtml(""));
+            }
             idx[0]++;
             if (idx[0] >= fullText.length()) {
                 textLabel.setText(toHtml(fullText));
@@ -119,6 +132,10 @@ public class DialogueBox extends JPanel {
                 typewriterTimer.stop();
                 return;
             }
+            char revealed = fullText.charAt(idx[0] - 1);
+            if (!java.lang.Character.isWhitespace(revealed)) {
+                UISound.playTypewriterTick();
+            }
             textLabel.setText(toHtml(fullText.substring(0, idx[0])));
         });
         typewriterTimer.start();
@@ -126,7 +143,14 @@ public class DialogueBox extends JPanel {
 
     private void renderChoices(DialogueLine line, Consumer<String> onChoiceSelected) {
         choicePanel.removeAll();
+        String choiceId = line.getChoiceId();
+        boolean hasDrumsticks = PlayerRewards.has("phil collins drumsticks");
         for (String option : line.getChoiceOptions()) {
+            if ("drumsticks_offer".equals(choiceId)
+                    && "Give him Phil's drumsticks".equals(option)
+                    && !hasDrumsticks) {
+                continue;
+            }
             PixelButton button = new PixelButton(option);
             button.setFont(PixelFont.bold(15f));
             button.setPlaySelectSound(false);
@@ -146,7 +170,17 @@ public class DialogueBox extends JPanel {
     }
 
     private String toHtml(String text) {
-        return "<html><body style='width:1120px'>" + text + "</body></html>";
+        int padding = getInsets().left + getInsets().right + 8;
+        int w = Math.max(400, getWidth() - padding);
+        return "<html><body style='width:" + w + "px'>" + text + "</body></html>";
+    }
+
+    /** Same as toHtml but renders text with CSS color:transparent — used for
+     *  pre-sizing the label before the typewriter starts, without any visible flash. */
+    private String toHtmlHidden(String text) {
+        int padding = getInsets().left + getInsets().right + 8;
+        int w = Math.max(400, getWidth() - padding);
+        return "<html><body style='width:" + w + "px; color:transparent'>" + text + "</body></html>";
     }
 
     @Override

@@ -5,6 +5,7 @@ import japan26.engine.SceneManager;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -55,6 +56,15 @@ public final class SettingsDialog {
         pct.setAlignmentX(Component.CENTER_ALIGNMENT);
         slider.addChangeListener(e -> pct.setText(slider.getValue() + "%"));
 
+        JCheckBox typewriterToggle = new JCheckBox("Typewriter SFX");
+        typewriterToggle.setOpaque(false);
+        typewriterToggle.setSelected(SettingsState.isTypewriterSfxEnabled());
+        typewriterToggle.setFont(PixelFont.regular(15f));
+        typewriterToggle.setForeground(new Color(230, 230, 230));
+        typewriterToggle.setAlignmentX(Component.CENTER_ALIGNMENT);
+        typewriterToggle.addActionListener(e ->
+                SettingsState.setTypewriterSfxEnabled(typewriterToggle.isSelected()));
+
         PixelButton closeBtn = new PixelButton("Close");
         closeBtn.setFont(PixelFont.bold(16f));
         closeBtn.setPreferredSize(new Dimension(260, 40));
@@ -69,6 +79,8 @@ public final class SettingsDialog {
         root.add(slider);
         root.add(Box.createRigidArea(new Dimension(0, 4)));
         root.add(pct);
+        root.add(Box.createRigidArea(new Dimension(0, 10)));
+        root.add(typewriterToggle);
         root.add(Box.createRigidArea(new Dimension(0, 16)));
 
         if (!inMenu) {

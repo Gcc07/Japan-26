@@ -8,10 +8,13 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
+import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
+import javax.swing.KeyStroke;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -44,19 +47,45 @@ public class MainMenuView extends JPanel {
     private BufferedImage pixelBuffer;
     private int           backgroundIndex = 0;
 
+    private final JLayeredPane           layered;
     private final CherryBlossomAnimation blossoms;
     private final JPanel                 content;
+    private final JPanel                 creditsOverlay;
+    private final PixelButton            creditsButton;
+    private PixelButton                  testBtn;
+    private PixelButton                  minigameTestBtn;
+    private javax.swing.Box.Filler       testGap;
+    private javax.swing.Box.Filler       minigameTestGap;
     private float                        floatOffset = 0f;
+    private boolean                      debugRoutesUnlocked = false;
+    private int                          debugUnlockProgress = 0; // 0=none, 1=got G
 
     public MainMenuView() {
-        setLayout(null);
+        setLayout(new BorderLayout());
+
+        layered = new JLayeredPane();
+        layered.setLayout(null);
+        layered.setOpaque(false);
+        add(layered, BorderLayout.CENTER);
 
         blossoms = new CherryBlossomAnimation();
         blossoms.setEnabled(false);
-        add(blossoms);
+        layered.add(blossoms, JLayeredPane.DEFAULT_LAYER);
 
+        creditsButton = menuButton("Credits");
         content = buildContentPanel();
-        add(content);
+        layered.add(content, JLayeredPane.DEFAULT_LAYER);
+
+        creditsOverlay = CreditsDialog.createCreditsOverlay(this::hideCreditsOverlay);
+        creditsOverlay.setVisible(false);
+        layered.add(creditsOverlay, JLayeredPane.MODAL_LAYER);
+
+        creditsButton.addActionListener(e -> {
+            creditsOverlay.setVisible(true);
+            creditsOverlay.revalidate();
+            repaint();
+        });
+        bindHiddenDebugUnlock();
 
         loadBackground(MENU_BACKGROUNDS[backgroundIndex]);
 
@@ -73,13 +102,18 @@ public class MainMenuView extends JPanel {
 
     @Override
     public void doLayout() {
-        int w = getWidth();
-        int h = getHeight();
+        super.doLayout();
+        int w = layered.getWidth();
+        int h = layered.getHeight();
+        if (w <= 0 || h <= 0) {
+            return;
+        }
         blossoms.setBounds(0, 0, w, h);
         Dimension pref = content.getPreferredSize();
         int cx = (w - pref.width) / 2;
         int cy = (h - pref.height) / 2 + (int) floatOffset;
         content.setBounds(cx, cy, pref.width, pref.height);
+        creditsOverlay.setBounds(0, 0, w, h);
     }
 
     private JPanel buildContentPanel() {
@@ -99,18 +133,16 @@ public class MainMenuView extends JPanel {
         PixelButton startBtn = menuButton("Begin Journey");
         startBtn.setPlaySelectSound(false);
         startBtn.addActionListener(e -> startGameWithStartSound());
-        PixelButton testBtn = menuButton("Test Story");
+        testBtn = menuButton("Test Story");
         testBtn.setPlaySelectSound(false);
         testBtn.addActionListener(e -> startTestStoryWithStartSound());
-        PixelButton minigameTestBtn = menuButton("Minigames Test");
+        minigameTestBtn = menuButton("Minigames Test");
         minigameTestBtn.setPlaySelectSound(false);
         minigameTestBtn.addActionListener(e -> startMinigameTestWithStartSound());
         PixelButton quitBtn = menuButton("Quit");
         quitBtn.addActionListener(e -> System.exit(0));
         PixelButton settingsBtn = menuButton("Settings");
         settingsBtn.addActionListener(e -> SettingsDialog.show(SceneManager.getFrame(), true));
-        PixelButton creditsBtn = menuButton("Credits");
-        creditsBtn.addActionListener(e -> CreditsDialog.show(SceneManager.getFrame()));
 
         panel.add(title);
         panel.add(Box.createRigidArea(new Dimension(0, 16)));
@@ -118,18 +150,63 @@ public class MainMenuView extends JPanel {
         panel.add(Box.createRigidArea(new Dimension(0, 20)));
         panel.add(startBtn);
         panel.add(Box.createRigidArea(new Dimension(0, 12)));
+        testGap = (javax.swing.Box.Filler) Box.createRigidArea(new Dimension(0, 12));
+        minigameTestGap = (javax.swing.Box.Filler) Box.createRigidArea(new Dimension(0, 12));
+        testBtn.setVisible(false);
+        minigameTestBtn.setVisible(false);
+        testGap.setVisible(false);
+        minigameTestGap.setVisible(false);
         panel.add(testBtn);
-        panel.add(Box.createRigidArea(new Dimension(0, 12)));
+        panel.add(testGap);
         panel.add(minigameTestBtn);
-        panel.add(Box.createRigidArea(new Dimension(0, 12)));
+        panel.add(minigameTestGap);
         panel.add(settingsBtn);
         panel.add(Box.createRigidArea(new Dimension(0, 12)));
-        panel.add(creditsBtn);
+        panel.add(creditsButton);
         panel.add(Box.createRigidArea(new Dimension(0, 12)));
         panel.add(quitBtn);
 
         SwingUtilities.invokeLater(startBtn::requestFocusInWindow);
         return panel;
+    }
+
+    private void bindHiddenDebugUnlock() {
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("G"), "debug_g");
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("C"), "debug_c");
+        getActionMap().put("debug_g", new javax.swing.AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                handleDebugUnlock('G');
+            }
+        });
+        getActionMap().put("debug_c", new javax.swing.AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                handleDebugUnlock('C');
+            }
+        });
+    }
+
+    private void handleDebugUnlock(char key) {
+        if (debugRoutesUnlocked) return;
+        if (debugUnlockProgress == 0) {
+            debugUnlockProgress = (key == 'G') ? 1 : 0;
+            return;
+        }
+        if (debugUnlockProgress == 1 && key == 'C') {
+            debugRoutesUnlocked = true;
+            testBtn.setVisible(true);
+            minigameTestBtn.setVisible(true);
+            testGap.setVisible(true);
+            minigameTestGap.setVisible(true);
+            for (int i = SettingsState.PLAYER_PRESET_MIN; i <= SettingsState.PLAYER_PRESET_MAX; i++) {
+                SettingsState.unlockPlayerPreset(i);
+            }
+            content.revalidate();
+            content.repaint();
+            return;
+        }
+        debugUnlockProgress = (key == 'G') ? 1 : 0;
     }
 
     private JLabel createTitleGraphic() {
@@ -168,6 +245,11 @@ public class MainMenuView extends JPanel {
     private void startMinigameTestWithStartSound() {
         UISound.playStart();
         SceneManager.startMinigameTestStory();
+    }
+
+    private void hideCreditsOverlay() {
+        creditsOverlay.setVisible(false);
+        repaint();
     }
 
     private void cycleBackground() {
