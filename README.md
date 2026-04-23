@@ -50,11 +50,22 @@
 
 ### How To Run
 
-This project now runs as a Swing app (no JavaFX/Maven runtime needed).
-
 Requirements:
 - Java JDK installed (`javac` and `java` available in terminal PATH)
 - Windows PowerShell or Command Prompt
+
+EASY WAY:
+1. On Github, click "<>code" in the Japan 26 Repository.
+2. Click "download zip"
+3. In your file explorer, extract the zip file by right clicking and selecting "extract all..."
+4. Navigate to the extracted folder
+5. Find the "run.bat" file
+6. Double click to run.
+7. Play
+
+7. If issues arise, please attempt a manual start as seen below.
+
+MANUAL WAY:
 
 From the project root:
 
