@@ -109,20 +109,19 @@ public class DialogueBox extends JPanel {
         typing   = true;
         continueHint.setVisible(false);
 
-        // Pre-render the full text invisibly so the label claims its final
-        // height from the start — prevents layout jumps while characters reveal.
-        textLabel.setText(toHtml(fullText));
-        textLabel.setForeground(new Color(0, 0, 0, 0));
-        revalidate();
-
-        // Capture the intended foreground before hiding it.
         final Color revealColor = nameLabel.isVisible() ? Color.WHITE : new Color(235, 235, 235);
+
+        // Pre-size: render the full text using CSS color:transparent so the label
+        // claims its final height with no visible text — avoids both layout jumps
+        // AND the alpha-ignored black flash that Color(0,0,0,0) caused.
+        textLabel.setForeground(revealColor);
+        textLabel.setText(toHtmlHidden(fullText));
+        revalidate();
 
         final int[] idx = {0};
         typewriterTimer = new Timer((int) CHAR_DELAY_MS, e -> {
-            // Restore foreground on first tick so the reveal is visible.
+            // On first tick swap to the real (visible) HTML and begin typing.
             if (idx[0] == 0) {
-                textLabel.setForeground(revealColor);
                 textLabel.setText(toHtml(""));
             }
             idx[0]++;
@@ -171,11 +170,17 @@ public class DialogueBox extends JPanel {
     }
 
     private String toHtml(String text) {
-        // Use actual component width minus internal padding so wrapping always
-        // matches the visible box, no matter how the window or layout resizes.
         int padding = getInsets().left + getInsets().right + 8;
         int w = Math.max(400, getWidth() - padding);
         return "<html><body style='width:" + w + "px'>" + text + "</body></html>";
+    }
+
+    /** Same as toHtml but renders text with CSS color:transparent — used for
+     *  pre-sizing the label before the typewriter starts, without any visible flash. */
+    private String toHtmlHidden(String text) {
+        int padding = getInsets().left + getInsets().right + 8;
+        int w = Math.max(400, getWidth() - padding);
+        return "<html><body style='width:" + w + "px; color:transparent'>" + text + "</body></html>";
     }
 
     @Override

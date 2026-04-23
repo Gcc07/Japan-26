@@ -246,8 +246,19 @@ public class GameView extends JPanel {
     }
 
     private JPanel createNamePromptPanel() {
-        JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 120));
-        wrapper.setOpaque(false);
+        JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 120)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setPaint(new java.awt.GradientPaint(
+                        0, 0,          new java.awt.Color(28, 16, 52),
+                        0, getHeight(), new java.awt.Color(14, 8, 30)));
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        wrapper.setOpaque(true);
 
         final JPanel card = new JPanel();
         card.setOpaque(true);
