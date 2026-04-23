@@ -12,7 +12,7 @@ public final class SettingsState {
     public static final int PLAYER_PRESET_MIN = 1;
     public static final int PLAYER_PRESET_MAX = 11;
 
-    private static final int[] LOCKED_BY_DEFAULT = {5, 6, 11};
+    private static final int[] LOCKED_BY_DEFAULT = {5, 6, 7, 11};
 
     private static int volumePercent = 70;
     private static boolean typewriterSfxEnabled = true;

@@ -62,7 +62,14 @@ public class SceneManager {
     }
 
     public static void startGameWithNamePrompt() {
-        startGame(StoryData.buildStory(), true);
+        playSceneTransition(() -> {
+            GameView gameView = new GameView(storyEngine, java.util.List.of(), true);
+            // Defer story build until after name/preset are confirmed in the prompt.
+            gameView.setDeferredStorySupplier(StoryData::buildStory);
+            primaryFrame.setContentPane(gameView);
+            primaryFrame.revalidate();
+            primaryFrame.repaint();
+        });
     }
 
     public static void startTestStory() {

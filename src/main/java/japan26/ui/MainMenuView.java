@@ -13,6 +13,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
+import javax.swing.KeyStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -51,7 +52,13 @@ public class MainMenuView extends JPanel {
     private final JPanel                 content;
     private final JPanel                 creditsOverlay;
     private final PixelButton            creditsButton;
+    private PixelButton                  testBtn;
+    private PixelButton                  minigameTestBtn;
+    private javax.swing.Box.Filler       testGap;
+    private javax.swing.Box.Filler       minigameTestGap;
     private float                        floatOffset = 0f;
+    private boolean                      debugRoutesUnlocked = false;
+    private int                          debugUnlockProgress = 0; // 0=none, 1=got G
 
     public MainMenuView() {
         setLayout(new BorderLayout());
@@ -78,6 +85,7 @@ public class MainMenuView extends JPanel {
             creditsOverlay.revalidate();
             repaint();
         });
+        bindHiddenDebugUnlock();
 
         loadBackground(MENU_BACKGROUNDS[backgroundIndex]);
 
@@ -125,10 +133,10 @@ public class MainMenuView extends JPanel {
         PixelButton startBtn = menuButton("Begin Journey");
         startBtn.setPlaySelectSound(false);
         startBtn.addActionListener(e -> startGameWithStartSound());
-        PixelButton testBtn = menuButton("Test Story");
+        testBtn = menuButton("Test Story");
         testBtn.setPlaySelectSound(false);
         testBtn.addActionListener(e -> startTestStoryWithStartSound());
-        PixelButton minigameTestBtn = menuButton("Minigames Test");
+        minigameTestBtn = menuButton("Minigames Test");
         minigameTestBtn.setPlaySelectSound(false);
         minigameTestBtn.addActionListener(e -> startMinigameTestWithStartSound());
         PixelButton quitBtn = menuButton("Quit");
@@ -142,10 +150,16 @@ public class MainMenuView extends JPanel {
         panel.add(Box.createRigidArea(new Dimension(0, 20)));
         panel.add(startBtn);
         panel.add(Box.createRigidArea(new Dimension(0, 12)));
+        testGap = (javax.swing.Box.Filler) Box.createRigidArea(new Dimension(0, 12));
+        minigameTestGap = (javax.swing.Box.Filler) Box.createRigidArea(new Dimension(0, 12));
+        testBtn.setVisible(false);
+        minigameTestBtn.setVisible(false);
+        testGap.setVisible(false);
+        minigameTestGap.setVisible(false);
         panel.add(testBtn);
-        panel.add(Box.createRigidArea(new Dimension(0, 12)));
+        panel.add(testGap);
         panel.add(minigameTestBtn);
-        panel.add(Box.createRigidArea(new Dimension(0, 12)));
+        panel.add(minigameTestGap);
         panel.add(settingsBtn);
         panel.add(Box.createRigidArea(new Dimension(0, 12)));
         panel.add(creditsButton);
@@ -154,6 +168,45 @@ public class MainMenuView extends JPanel {
 
         SwingUtilities.invokeLater(startBtn::requestFocusInWindow);
         return panel;
+    }
+
+    private void bindHiddenDebugUnlock() {
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("G"), "debug_g");
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("C"), "debug_c");
+        getActionMap().put("debug_g", new javax.swing.AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                handleDebugUnlock('G');
+            }
+        });
+        getActionMap().put("debug_c", new javax.swing.AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                handleDebugUnlock('C');
+            }
+        });
+    }
+
+    private void handleDebugUnlock(char key) {
+        if (debugRoutesUnlocked) return;
+        if (debugUnlockProgress == 0) {
+            debugUnlockProgress = (key == 'G') ? 1 : 0;
+            return;
+        }
+        if (debugUnlockProgress == 1 && key == 'C') {
+            debugRoutesUnlocked = true;
+            testBtn.setVisible(true);
+            minigameTestBtn.setVisible(true);
+            testGap.setVisible(true);
+            minigameTestGap.setVisible(true);
+            for (int i = SettingsState.PLAYER_PRESET_MIN; i <= SettingsState.PLAYER_PRESET_MAX; i++) {
+                SettingsState.unlockPlayerPreset(i);
+            }
+            content.revalidate();
+            content.repaint();
+            return;
+        }
+        debugUnlockProgress = (key == 'G') ? 1 : 0;
     }
 
     private JLabel createTitleGraphic() {

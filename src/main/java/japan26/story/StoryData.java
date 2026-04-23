@@ -2,7 +2,9 @@ package japan26.story;
 
 import japan26.model.Character;
 import japan26.model.StoryScene;
+import japan26.ui.SettingsState;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static japan26.model.Character.NARRATOR;
@@ -45,7 +47,7 @@ public class StoryData {
 
     // ── Add your characters here ────────────────────────────────────────────
     private static final Character RYO = Character.namedWithPortrait(
-            "Ryo",
+            "Yuan",
             "#8fd5ff",
             "/japan26/Sprites/player11.png"
     );
@@ -53,7 +55,10 @@ public class StoryData {
     // ── Your story ──────────────────────────────────────────────────────────
     /** Beats drafted in {@code mystory.txt} at the project root. */
     public static List<StoryScene> buildStory() {
-        return List.of(
+        boolean isMcCuen11 = SettingsState.getPlayerPresetIndex() == 11
+                && "mccuen".equalsIgnoreCase(SettingsState.getPlayerName());
+
+        List<StoryScene> scenes = new ArrayList<>(List.of(
 
             new StoryScene("plane_opening", "/japan26/images/AirPlaneMidAir.JPG")
                 .say(NARRATOR, "Okay. This is the story.")
@@ -112,34 +117,74 @@ public class StoryData {
             new StoryScene("arcade_aftergame", "/japan26/images/Game.jpg")
                 .sayByChoice(NARRATOR, "arcade_choice", "You step away from the machine with a dumb grin.",
                         "Claw Machine", "You step away from the machine with a dumb grin.",
-                        "Rhythm Game",  "Your hands are cooked, but that run was clean.")
+                        "Rhythm Game",  "Your hands are cooked.")
                 .say(PLAYER, "Okay yeah, Japan is delivering so far."),
 
             new StoryScene("akiba_night_walk", "/japan26/images/Road1.jpg")
-                .say(NARRATOR, "Outside, Akihabara is still glowing like it's noon.")
+                .say(NARRATOR, "Outside, Akihabara is still bustling, even during evening.")
                 .say(PLAYER, "I should head back soon... but one more lap couldn't hurt.")
-                .say(NARRATOR, "You drift with the crowd, pockets lighter, mood way better.")
-                .say(PLAYER, "Yeah. This trip is exactly what I needed."),
+                .say(NARRATOR, "You're losing money.")
+                .say(PLAYER, "Yeah. This trip is exactly what I needed.")
 
-            new StoryScene("rainy_crossroads_meet", "/japan26/images/Rainy Crossroads.jpg")
-                .say(NARRATOR, "Rain starts coming down hard by the time you hit the crossroads.")
-                .say(RYO, "Yo. You're the one who cleared that rhythm machine, right?")
-                .say(PLAYER, "Yeah, that was me.")
-                .say(RYO, "Respect. I've been hunting Phil's drumsticks forever.")
-                .choose("drumsticks_offer",
-                        "What do you do?",
-                        "Give him Phil's drumsticks",
-                        "Keep them",
-                        "I don't have them")
-                .sayByChoice(RYO, "drumsticks_offer", "No stress. If you find them, come back.",
-                        "Give him Phil's drumsticks", "No way... for real? You're a legend. Take this skin unlock.",
-                        "Keep them",                  "Fair call. I'd probably keep them too.",
-                        "I don't have them",          "No stress. If you find them, come back.")
-                .sayByChoice(PLAYER, "drumsticks_offer", "Maybe next run.",
-                        "Give him Phil's drumsticks", "Worth it. That fit is clean.",
-                        "Keep them",                  "Can't part with them yet.",
-                        "I don't have them",          "I'll keep an eye out.")
+        ));
 
-        );
+        // Crossroads scene branches on name + outfit at load time.
+        if (isMcCuen11) {
+            scenes.add(
+                new StoryScene("rainy_crossroads_special", "/japan26/images/Rainy Crossroads.jpg")
+                    .say(NARRATOR, "Rain starts coming down hard by the time you hit the crossroads.")
+                    .say(RYO, "Nice fit.")
+                    .say(RYO, "I can tell you're a State Grad.")
+                    // trigger auto-fires (empty text = skipped display) → unlocks preset 7
+                    .sayByChoice(NARRATOR, "state_grad_unlock", "", "fallback", "")
+                    .say(NARRATOR, "He nods and keeps walking.")
+            );
+        } else {
+            scenes.add(
+                new StoryScene("rainy_crossroads_meet", "/japan26/images/Rainy Crossroads.jpg")
+                    .say(NARRATOR, "Rain starts coming down hard by the time you hit the crossroads.")
+                    .say(RYO, "Yo. You're the one who cleared that rhythm machine, right?")
+                    .say(PLAYER, "Yeah, that was me.")
+                    .say(RYO, "Respect. I've been hunting Phil's drumsticks forever.")
+                    .choose("drumsticks_offer",
+                            "What do you do?",
+                            "Give him Phil's drumsticks",
+                            "Keep them",
+                            "I don't have them")
+                    .sayByChoice(RYO, "drumsticks_offer", "No stress. If you find them, come back.",
+                            "Give him Phil's drumsticks", "No way... for real? You're a legend. Take this skin unlock.",
+                            "Keep them",                  "Fair call. I'd probably keep them too.",
+                            "I don't have them",          "No stress. If you find them, come back.")
+                    .sayByChoice(PLAYER, "drumsticks_offer", "Maybe next run.",
+                            "Give him Phil's drumsticks", "Worth it. That fit is clean.",
+                            "Keep them",                  "Can't part with them yet.",
+                            "I don't have them",          "I'll keep an eye out.")
+            );
+        }
+
+        scenes.addAll(List.of(
+            new StoryScene("food_hunt", "/japan26/images/Rainy Crossroads.jpg")
+                .say(NARRATOR, "You and Ryo part ways. The rain is still going.")
+                .say(PLAYER, "Okay. I'm actually starving.")
+                .say(NARRATOR, "You duck under an awning and pull up maps. There's a spot nearby.")
+                .say(PLAYER, "Alright. Last stop of the night.")
+                .choose("food_choice", "What do you get?", "Ramen", "Udon")
+                .sayByChoiceWith(NARRATOR, "food_choice", "You find a ramen spot tucked in an alley.",
+                        "Ramen", "You find a ramen spot tucked in an alley.",  "/japan26/images/ramen.jpg",
+                        "Udon",  "You find a udon spot near the crossroads.",  "/japan26/images/Food(Noodles).jpg")
+                .sayByChoice(PLAYER, "food_choice", "Okay yeah this is it.",
+                        "Ramen", "Okay yeah. This is exactly what I needed.",
+                        "Udon",  "This udon is so good I can't even explain it.")
+                .sayByChoice(NARRATOR, "food_choice", "You eat.",
+                        "Ramen", "The broth hits different after a day like this.",
+                        "Udon",  "Thick, warm, perfect. You don't say a word the whole bowl.")
+                .say(PLAYER, "I think I'm done. Like, done done.")
+                .say(NARRATOR, "You make it back to the AirBNB and hit the bed before you even take your shoes off.")
+                .say(NARRATOR, "(Fade to black)")
+                .sayWith(NARRATOR, "You went into a food coma.", "__BLACK__")
+                .say(NARRATOR, "The end.")
+        ));
+
+        return scenes;
     }
 }

@@ -84,7 +84,7 @@ public class DialogueCharacterStrip extends JPanel {
         return new Dimension(w, STRIP_H);
     }
 
-    public void sync(DialogueLine line, Character partner) {
+    public void sync(DialogueLine line, Character partner, boolean hasActivePartner) {
         Character ch           = line.getCharacter();
         boolean   choiceLine   = line.hasChoices();
         boolean   narrator     = ch.getName().isEmpty();
@@ -100,7 +100,8 @@ public class DialogueCharacterStrip extends JPanel {
         rightSlot.setPortrait(resolvePortrait(rightSubject));
         rightSlot.setPlaceholderTint(decodeColor(rightSubject.getColor()));
 
-        boolean inConversation = !narrator && !choiceLine;
+        // Only show the right slot when there is an actual NPC in the conversation.
+        boolean inConversation = !narrator && !choiceLine && hasActivePartner;
         rightSlot.setVisible(inConversation);
 
         boolean leftActive  = inConversation && playerActive;

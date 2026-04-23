@@ -58,6 +58,15 @@ public class StoryEngine {
 
     private void stepToNextLine() {
         lineIndex++;
+        // Auto-skip lines whose resolved text is empty (silent conditional beats).
+        if (lineIndex < currentScene.getLines().size()) {
+            String resolved = getCurrentLineText();
+            if (resolved != null && resolved.isBlank()
+                    && !currentScene.getLines().get(lineIndex).hasChoices()) {
+                applyCurrentLineTriggers();
+                lineIndex++;
+            }
+        }
         if (lineIndex >= currentScene.getLines().size()) {
             // Scene is done – check for minigame hook or move on
             if (currentScene.hasChoiceMinigame()) {
@@ -75,6 +84,7 @@ public class StoryEngine {
             }
             advanceToNextScene();
         } else {
+            applyCurrentLineTriggers();
             if (onLineChanged != null) onLineChanged.run();
         }
     }
@@ -91,7 +101,16 @@ public class StoryEngine {
         }
         currentScene = sceneQueue.poll();
         lineIndex    = 0;
+        applyCurrentLineTriggers();
         if (onSceneChanged != null) onSceneChanged.run();
+    }
+
+    private void applyCurrentLineTriggers() {
+        DialogueLine line = getCurrentLine();
+        if (line == null || !line.hasChoiceResponses()) return;
+        if ("state_grad_unlock".equals(line.getChoiceId())) {
+            SettingsState.unlockPlayerPreset(7);
+        }
     }
 
     // ── State queries ─────────────────────────────────────────────────────────

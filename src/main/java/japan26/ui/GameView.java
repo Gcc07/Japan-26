@@ -23,6 +23,7 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
@@ -49,6 +50,9 @@ public class GameView extends JPanel {
     private final JPanel                  bottomBar;
     private final JPanel                  namePromptPanel;
     private       Character               conversationPartner = Character.NPC;
+    private       boolean                 hasActivePartner    = false;
+    /** Non-null only when story load is deferred until after name/outfit are confirmed. */
+    private       Supplier<java.util.List<StoryScene>> deferredStorySupplier = null;
     private float                          actionFlashAlpha = 0f;
     private Timer                          actionFlashTimer;
     private boolean                        actionCueRunning = false;
@@ -120,10 +124,16 @@ public class GameView extends JPanel {
 
         if (resumeExistingStoryState) {
             refreshScene();
-        } else {
+        } else if (!askNameAfterFade) {
             engine.loadStory(story);
         }
+        // When askNameAfterFade=true, story is loaded by deferredStorySupplier
+        // inside the confirm handler after name/preset are written to SettingsState.
         requestFocusInWindow();
+    }
+
+    public void setDeferredStorySupplier(Supplier<java.util.List<StoryScene>> supplier) {
+        this.deferredStorySupplier = supplier;
     }
 
     // ── Advance logic ─────────────────────────────────────────────────────────
@@ -144,6 +154,8 @@ public class GameView extends JPanel {
 
     private void refreshScene() {
         StoryScene scene = engine.getCurrentScene();
+        conversationPartner = Character.NPC; // clear previous NPC when scene changes
+        hasActivePartner    = false;
         setBackground(scene.getDefaultBackground());
         refreshLine();
     }
@@ -164,9 +176,10 @@ public class GameView extends JPanel {
         }
         Character ch = line.getCharacter();
         if (!ch.getName().isEmpty() && ch != Character.PLAYER && !line.hasChoices()) {
-            conversationPartner = ch;
+            conversationPartner  = ch;
+            hasActivePartner     = true;
         }
-        characterStrip.sync(line, conversationPartner);
+        characterStrip.sync(line, conversationPartner, hasActivePartner);
         dialogueBox.show(line, engine.getCurrentLineText(), engine::choose);
     }
 
@@ -358,6 +371,12 @@ public class GameView extends JPanel {
             }
             SettingsState.setPlayerName(nameField.getText());
             SettingsState.setPlayerPresetIndex(selectedPreset[0]);
+            // Build and load the story NOW — after name/preset are set —
+            // so branches that depend on them (e.g. McCuen+player11) evaluate correctly.
+            if (deferredStorySupplier != null) {
+                engine.loadStory(deferredStorySupplier.get());
+                deferredStorySupplier = null;
+            }
             namePromptPanel.setVisible(false);
             bottomBar.setVisible(true);
             refreshLine();
