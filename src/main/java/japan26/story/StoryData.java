@@ -46,15 +46,24 @@ public class StoryData {
     // private static final Character FRIEND = Character.named("Friend", "#aaddff");
 
     // ── Your story ──────────────────────────────────────────────────────────
+    /** Beats drafted in {@code mystory.txt} at the project root. */
     public static List<StoryScene> buildStory() {
         return List.of(
 
-            new StoryScene("scene_1", "/japan26/images/Skyline.jpg")
-                .say(NARRATOR, "Your story starts here.")
-                .choose("first_reply", "How do you answer?", "Confident", "Cautious")
-                .sayByChoice(PLAYER, "first_reply", "Replace this with your own dialogue.",
-                    "Confident", "I was born ready. Let's go.",
-                    "Cautious",  "I can do this... one step at a time.")
+            new StoryScene("plane_opening", "/japan26/images/AirPlaneMidAir.JPG")
+                .say(NARRATOR, "Okay. This is the story.")
+                .say(NARRATOR, "It's spring 2026. You're going to Japan for senior trip, getting away from it all.")
+                .say(PLAYER, "This is gonna be so dope i'm gonna eat so much food and see so much cool stuff")
+                .sayWith(NARRATOR, "", "/japan26/images/AirPlane.jpg")
+                .say(PLAYER, "I mean, just look at this plane. This thing is massive.")
+                .say(PLAYER, "That hour plane ride to Canada kinda sucked but these next 12 hours are gonna be GREAT!")
+                .say(PLAYER, "Kinda nuts... I'm a little tired tho.")
+                .say(NARRATOR, "(Fade to black)")
+                .sayWith(NARRATOR,
+                        "You sleep, and later arrive at the Tokyo Airport. You maneuver your way into the subway line, groggy from the jetlag.",
+                        "__BLACK__")
+                .say(PLAYER, "Yo I'm mad tired. I feel like I'm Karim in 2006.")
+                .say(NARRATOR, "You wait for the train, eyes closing.")
 
         );
     }

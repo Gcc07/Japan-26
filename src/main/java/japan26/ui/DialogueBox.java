@@ -48,7 +48,7 @@ public class DialogueBox extends JPanel {
         textLabel.setFont(PixelFont.regular(22f));
         textLabel.setForeground(Color.WHITE);
 
-        continueHint = new PixelLabel("\u25BE");
+        continueHint = new PixelLabel("<>");
         continueHint.setFont(PixelFont.bold(20f));
         continueHint.setHorizontalAlignment(SwingConstants.RIGHT);
         continueHint.setVisible(false);
@@ -107,10 +107,23 @@ public class DialogueBox extends JPanel {
         fullText = text;
         typing   = true;
         continueHint.setVisible(false);
-        textLabel.setText("");
+
+        // Pre-render the full text invisibly so the label claims its final
+        // height from the start — prevents layout jumps while characters reveal.
+        textLabel.setText(toHtml(fullText));
+        textLabel.setForeground(new Color(0, 0, 0, 0));
+        revalidate();
+
+        // Capture the intended foreground before hiding it.
+        final Color revealColor = nameLabel.isVisible() ? Color.WHITE : new Color(235, 235, 235);
 
         final int[] idx = {0};
         typewriterTimer = new Timer((int) CHAR_DELAY_MS, e -> {
+            // Restore foreground on first tick so the reveal is visible.
+            if (idx[0] == 0) {
+                textLabel.setForeground(revealColor);
+                textLabel.setText(toHtml(""));
+            }
             idx[0]++;
             if (idx[0] >= fullText.length()) {
                 textLabel.setText(toHtml(fullText));
@@ -118,6 +131,10 @@ public class DialogueBox extends JPanel {
                 continueHint.setVisible(true);
                 typewriterTimer.stop();
                 return;
+            }
+            char revealed = fullText.charAt(idx[0] - 1);
+            if (!java.lang.Character.isWhitespace(revealed)) {
+                UISound.playTypewriterTick();
             }
             textLabel.setText(toHtml(fullText.substring(0, idx[0])));
         });
@@ -146,7 +163,11 @@ public class DialogueBox extends JPanel {
     }
 
     private String toHtml(String text) {
-        return "<html><body style='width:1120px'>" + text + "</body></html>";
+        // Use actual component width minus internal padding so wrapping always
+        // matches the visible box, no matter how the window or layout resizes.
+        int padding = getInsets().left + getInsets().right + 8;
+        int w = Math.max(400, getWidth() - padding);
+        return "<html><body style='width:" + w + "px'>" + text + "</body></html>";
     }
 
     @Override

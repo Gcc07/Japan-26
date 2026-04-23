@@ -30,6 +30,7 @@ public final class UISound {
     private static final String START_FILE  = "JDSherbert - Ultimate UI SFX Pack - Popup Open - 1.wav";
 
     private static long lastHoverMs = 0L;
+    private static long lastTypewriterMs = 0L;
 
     private UISound() {
     }
@@ -50,6 +51,15 @@ public final class UISound {
     public static void playStart() {
         if (SettingsState.isMuted()) return;
         play(START_FILE, true);
+    }
+
+    public static void playTypewriterTick() {
+        if (SettingsState.isMuted()) return;
+        if (!SettingsState.isTypewriterSfxEnabled()) return;
+        long now = System.currentTimeMillis();
+        if (now - lastTypewriterMs < 40) return;
+        lastTypewriterMs = now;
+        play(HOVER_FILE, false);
     }
 
     private static void play(String fileName, boolean fallbackBeep) {

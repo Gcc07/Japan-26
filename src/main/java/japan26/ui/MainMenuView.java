@@ -8,10 +8,12 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
+import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -44,19 +46,38 @@ public class MainMenuView extends JPanel {
     private BufferedImage pixelBuffer;
     private int           backgroundIndex = 0;
 
+    private final JLayeredPane           layered;
     private final CherryBlossomAnimation blossoms;
     private final JPanel                 content;
+    private final JPanel                 creditsOverlay;
+    private final PixelButton            creditsButton;
     private float                        floatOffset = 0f;
 
     public MainMenuView() {
-        setLayout(null);
+        setLayout(new BorderLayout());
+
+        layered = new JLayeredPane();
+        layered.setLayout(null);
+        layered.setOpaque(false);
+        add(layered, BorderLayout.CENTER);
 
         blossoms = new CherryBlossomAnimation();
         blossoms.setEnabled(false);
-        add(blossoms);
+        layered.add(blossoms, JLayeredPane.DEFAULT_LAYER);
 
+        creditsButton = menuButton("Credits");
         content = buildContentPanel();
-        add(content);
+        layered.add(content, JLayeredPane.DEFAULT_LAYER);
+
+        creditsOverlay = CreditsDialog.createCreditsOverlay(this::hideCreditsOverlay);
+        creditsOverlay.setVisible(false);
+        layered.add(creditsOverlay, JLayeredPane.MODAL_LAYER);
+
+        creditsButton.addActionListener(e -> {
+            creditsOverlay.setVisible(true);
+            creditsOverlay.revalidate();
+            repaint();
+        });
 
         loadBackground(MENU_BACKGROUNDS[backgroundIndex]);
 
@@ -73,13 +94,18 @@ public class MainMenuView extends JPanel {
 
     @Override
     public void doLayout() {
-        int w = getWidth();
-        int h = getHeight();
+        super.doLayout();
+        int w = layered.getWidth();
+        int h = layered.getHeight();
+        if (w <= 0 || h <= 0) {
+            return;
+        }
         blossoms.setBounds(0, 0, w, h);
         Dimension pref = content.getPreferredSize();
         int cx = (w - pref.width) / 2;
         int cy = (h - pref.height) / 2 + (int) floatOffset;
         content.setBounds(cx, cy, pref.width, pref.height);
+        creditsOverlay.setBounds(0, 0, w, h);
     }
 
     private JPanel buildContentPanel() {
@@ -109,8 +135,6 @@ public class MainMenuView extends JPanel {
         quitBtn.addActionListener(e -> System.exit(0));
         PixelButton settingsBtn = menuButton("Settings");
         settingsBtn.addActionListener(e -> SettingsDialog.show(SceneManager.getFrame(), true));
-        PixelButton creditsBtn = menuButton("Credits");
-        creditsBtn.addActionListener(e -> CreditsDialog.show(SceneManager.getFrame()));
 
         panel.add(title);
         panel.add(Box.createRigidArea(new Dimension(0, 16)));
@@ -124,7 +148,7 @@ public class MainMenuView extends JPanel {
         panel.add(Box.createRigidArea(new Dimension(0, 12)));
         panel.add(settingsBtn);
         panel.add(Box.createRigidArea(new Dimension(0, 12)));
-        panel.add(creditsBtn);
+        panel.add(creditsButton);
         panel.add(Box.createRigidArea(new Dimension(0, 12)));
         panel.add(quitBtn);
 
@@ -168,6 +192,11 @@ public class MainMenuView extends JPanel {
     private void startMinigameTestWithStartSound() {
         UISound.playStart();
         SceneManager.startMinigameTestStory();
+    }
+
+    private void hideCreditsOverlay() {
+        creditsOverlay.setVisible(false);
+        repaint();
     }
 
     private void cycleBackground() {
