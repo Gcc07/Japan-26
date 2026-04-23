@@ -21,6 +21,9 @@ public class StoryScene {
 
     /** Optional: a minigame key to launch after this scene ends (null = none). */
     private String followUpMinigame = null;
+    /** Optional: launch minigame based on a prior choice in this scene. */
+    private String choiceMinigameChoiceId = null;
+    private final Map<String, String> choiceMinigameByOption = new HashMap<>();
 
     public StoryScene(String id, String defaultBackground) {
         this.id                = id;
@@ -66,9 +69,45 @@ public class StoryScene {
         return this;
     }
 
+    /**
+     * Like {@link #sayByChoice} but also swaps backgrounds per choice.
+     * triplets should be option/text/bgPath groups:
+     *   "Matcha", "Matcha it is-", "/japan26/images/Matcha.jpg",
+     *   "Coffee", "Coffee it is.", "/japan26/images/Coffee.jpg"
+     */
+    public StoryScene sayByChoiceWith(
+            Character character,
+            String choiceId,
+            String defaultText,
+            String... triplets
+    ) {
+        Map<String, String> responses = new HashMap<>();
+        Map<String, String> bgs       = new HashMap<>();
+        for (int i = 0; i + 2 < triplets.length; i += 3) {
+            responses.put(triplets[i],     triplets[i + 1]);
+            bgs.put(      triplets[i],     triplets[i + 2]);
+        }
+        lines.add(DialogueLine.choiceResponseWithBg(character, choiceId, defaultText, responses, bgs));
+        return this;
+    }
+
     /** Mark that a minigame should launch after this scene completes. */
     public StoryScene thenMinigame(String minigameKey) {
         this.followUpMinigame = minigameKey;
+        return this;
+    }
+
+    /**
+     * Launches a minigame at scene end based on a selected choice option.
+     * Pairs are option/minigameKey, e.g.:
+     *   "Claw Machine", "claw_machine", "Rhythm Game", "rhythm_game"
+     */
+    public StoryScene thenMinigameByChoice(String choiceId, String... optionKeyPairs) {
+        this.choiceMinigameChoiceId = choiceId;
+        this.choiceMinigameByOption.clear();
+        for (int i = 0; i + 1 < optionKeyPairs.length; i += 2) {
+            choiceMinigameByOption.put(optionKeyPairs[i], optionKeyPairs[i + 1]);
+        }
         return this;
     }
 
@@ -79,4 +118,12 @@ public class StoryScene {
     public List<DialogueLine> getLines()            { return lines; }
     public String             getFollowUpMinigame() { return followUpMinigame; }
     public boolean            hasMinigame()         { return followUpMinigame != null; }
+    public boolean            hasChoiceMinigame()   {
+        return choiceMinigameChoiceId != null && !choiceMinigameByOption.isEmpty();
+    }
+    public String resolveChoiceMinigame(String selectedOption) {
+        if (selectedOption == null || choiceMinigameByOption.isEmpty()) return null;
+        return choiceMinigameByOption.get(selectedOption);
+    }
+    public String getChoiceMinigameChoiceId() { return choiceMinigameChoiceId; }
 }

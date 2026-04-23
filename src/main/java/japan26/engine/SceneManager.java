@@ -86,6 +86,16 @@ public class SceneManager {
         });
     }
 
+    /** Return to the already-running story state (used after minigames). */
+    private static void resumeCurrentStoryView() {
+        playSceneTransition(() -> {
+            GameView gameView = new GameView(storyEngine, List.of(), false, true);
+            primaryFrame.setContentPane(gameView);
+            primaryFrame.revalidate();
+            primaryFrame.repaint();
+        });
+    }
+
     /**
      * Launches the minigame registered under {@code key}.
      * When the minigame signals completion it calls {@code onComplete}.
@@ -99,7 +109,7 @@ public class SceneManager {
         }
         game.setOnComplete(() -> {
             onComplete.run();
-            startGame(); // return to story view
+            resumeCurrentStoryView();
         });
         game.start(primaryFrame);
     }

@@ -1,7 +1,9 @@
 package japan26.engine;
 
+import japan26.minigame.PlayerRewards;
 import japan26.model.DialogueLine;
 import japan26.model.StoryScene;
+import japan26.ui.SettingsState;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
@@ -58,6 +60,15 @@ public class StoryEngine {
         lineIndex++;
         if (lineIndex >= currentScene.getLines().size()) {
             // Scene is done – check for minigame hook or move on
+            if (currentScene.hasChoiceMinigame()) {
+                String choiceId = currentScene.getChoiceMinigameChoiceId();
+                String selected = selectedChoices.get(choiceId);
+                String minigameKey = currentScene.resolveChoiceMinigame(selected);
+                if (minigameKey != null) {
+                    SceneManager.launchMinigame(minigameKey, this::afterMinigame);
+                    return;
+                }
+            }
             if (currentScene.hasMinigame()) {
                 SceneManager.launchMinigame(currentScene.getFollowUpMinigame(), this::afterMinigame);
                 return;
@@ -103,11 +114,17 @@ public class StoryEngine {
         DialogueLine line = getCurrentLine();
         if (line == null || !line.hasChoices()) return;
         selectedChoices.put(line.getChoiceId(), option);
+        if ("drumsticks_offer".equals(line.getChoiceId())
+                && "Give him Phil's drumsticks".equals(option)
+                && PlayerRewards.has("phil collins drumsticks")) {
+            SettingsState.unlockPlayerPreset(11);
+        }
         stepToNextLine();
     }
 
-    public StoryScene getCurrentScene() { return currentScene; }
-    public boolean    isFinished()      { return finished; }
+    public StoryScene getCurrentScene()              { return currentScene; }
+    public boolean    isFinished()                   { return finished; }
+    public String     getSelectedChoice(String id)   { return selectedChoices.get(id); }
 
     // ── Listener wiring ───────────────────────────────────────────────────────
 

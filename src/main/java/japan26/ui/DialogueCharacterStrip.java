@@ -130,6 +130,13 @@ public class DialogueCharacterStrip extends JPanel {
         if (who == Character.PLAYER) {
             return resolvePlayerPortrait();
         }
+        String custom = who.getPortraitResourcePath();
+        if (custom != null && !custom.isBlank()) {
+            BufferedImage customImg = loadImage(custom);
+            if (customImg != null) {
+                return customImg;
+            }
+        }
         if (cachedNpcSprite == null) {
             cachedNpcSprite = loadImage(NPC_SPRITE_PATH);
         }

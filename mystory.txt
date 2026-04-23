@@ -15,10 +15,9 @@ You: Kinda nuts... I'm a little tired tho.
 
 *Fade to black*
 
-*Have it be black, and the narrator say*
-(You sleep, and later arrive at the Tokyo Airport. 
-You maneuver your way into the subway line, 
-groggy from the jetlag.)
+(You sleep, and later arrive at the Tokyo Airport. )
+
+(You maneuver your way into the subway line, groggy from the jetlag.)
 
 *cut to the Trainstation1*
 
@@ -26,6 +25,38 @@ You: Yo I'm mad tired. I feel like I'm Karim in 2006.
 
 (You wait for the train, eyes closing.)
 
+*Cut to skyline.jpg
+
+(You leave the train and go to your AirBNB)
+
+You: The view here is crazy.
+
+You: I should probably head to bed.
+
+!CHOICE - Go to bed / Wander the streets
+ Go to bed: (You collapse into your bed, exhausted)
+ Wander the streets: (You collapsed at the door.)
+
+ *Fade to black*
+
+(You dream of all the movies you watched on the plane.)
+
+
+*Cut to Alleyway1*
+
+You: Good morning Japan.
+
+You: I'm kinda thirsty what should I get.
+
+!CHOICE - Matcha / Coffee
+ Matcha: Cut to Matcha.jpg
+    You: Matcha it is-
+    You: They're out.
+    You: Coffee it is, I guess.
+ Coffee: Cut to Coffee.jpg
+    You: Mmm good coffee.
+
+You: What to do now...
 
 
 

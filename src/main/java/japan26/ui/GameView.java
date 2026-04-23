@@ -55,6 +55,15 @@ public class GameView extends JPanel {
     private boolean                        solidBlackBackground = false;
 
     public GameView(StoryEngine engine, java.util.List<StoryScene> story, boolean askNameAfterFade) {
+        this(engine, story, askNameAfterFade, false);
+    }
+
+    public GameView(
+            StoryEngine engine,
+            java.util.List<StoryScene> story,
+            boolean askNameAfterFade,
+            boolean resumeExistingStoryState
+    ) {
         this.engine = engine;
 
         setLayout(new BorderLayout());
@@ -109,7 +118,11 @@ public class GameView extends JPanel {
         engine.setOnSceneChanged(this::refreshScene);
         engine.setOnStoryFinished(this::onStoryDone);
 
-        engine.loadStory(story);
+        if (resumeExistingStoryState) {
+            refreshScene();
+        } else {
+            engine.loadStory(story);
+        }
         requestFocusInWindow();
     }
 
@@ -142,7 +155,13 @@ public class GameView extends JPanel {
             runFadeToBlackCue();
             return;
         }
-        if (line.changesBackground()) setBackground(line.getBackgroundPath());
+        if (line.changesBackground()) {
+            setBackground(line.getBackgroundPath());
+        } else if (line.hasChoiceBgPaths()) {
+            String selectedChoice = engine.getSelectedChoice(line.getChoiceId());
+            String bgForChoice = line.getBgForChoice(selectedChoice);
+            if (bgForChoice != null) setBackground(bgForChoice);
+        }
         Character ch = line.getCharacter();
         if (!ch.getName().isEmpty() && ch != Character.PLAYER && !line.hasChoices()) {
             conversationPartner = ch;

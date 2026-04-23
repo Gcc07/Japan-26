@@ -1,5 +1,6 @@
 package japan26.ui;
 
+import japan26.minigame.PlayerRewards;
 import japan26.model.Character;
 import japan26.model.DialogueLine;
 
@@ -143,7 +144,14 @@ public class DialogueBox extends JPanel {
 
     private void renderChoices(DialogueLine line, Consumer<String> onChoiceSelected) {
         choicePanel.removeAll();
+        String choiceId = line.getChoiceId();
+        boolean hasDrumsticks = PlayerRewards.has("phil collins drumsticks");
         for (String option : line.getChoiceOptions()) {
+            if ("drumsticks_offer".equals(choiceId)
+                    && "Give him Phil's drumsticks".equals(option)
+                    && !hasDrumsticks) {
+                continue;
+            }
             PixelButton button = new PixelButton(option);
             button.setFont(PixelFont.bold(15f));
             button.setPlaySelectSound(false);

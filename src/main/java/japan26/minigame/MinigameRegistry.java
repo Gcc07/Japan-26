@@ -21,6 +21,8 @@ public class MinigameRegistry {
     /** Registers default placeholder minigames for integration testing. */
     public static void ensureDefaultTestMinigames() {
         registry.putIfAbsent("photo_focus", new RhythmDrumMinigame());
+        registry.putIfAbsent("rhythm_game", new RhythmDrumMinigame());
+        registry.putIfAbsent("claw_machine", new ClawMachineMinigame());
         registry.putIfAbsent("street_quicktime", new PlaceholderMinigame(
                 "Street Quicktime",
                 "Placeholder for a timing/reaction minigame during story transitions."
